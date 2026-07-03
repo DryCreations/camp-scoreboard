@@ -1,0 +1,192 @@
+@import 'tailwindcss';
+
+/* Self-hosted display faces (bundled, no CDN) so the whole app works fully
+   offline on the camp LAN. Anton = tall condensed numerals for the hero score;
+   Oswald = condensed complement for the timer, labels, and control UI. */
+@import '@fontsource/anton/400.css';
+@import '@fontsource/oswald/300.css';
+@import '@fontsource/oswald/500.css';
+@import '@fontsource/oswald/700.css';
+
+:root {
+	/* Broadcast "dark chrome" base — not a flat black, a cool graphite. */
+	--chrome-900: #0a0c10;
+	--chrome-800: #12151c;
+	--chrome-700: #1b202a;
+	--chrome-line: #2b3340;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	background: var(--chrome-900);
+	color: #fff;
+	font-family: 'Oswald', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* --- Scoreboard type --- */
+.font-score {
+	font-family: 'Anton', 'Oswald', sans-serif;
+	font-weight: 400;
+	letter-spacing: 0.01em;
+	font-feature-settings: 'tnum' 1;
+}
+.font-timer {
+	font-family: 'Oswald', sans-serif;
+	font-weight: 700;
+	font-feature-settings: 'tnum' 1;
+}
+.font-label {
+	font-family: 'Oswald', sans-serif;
+	font-weight: 500;
+	letter-spacing: 0.25em;
+	text-transform: uppercase;
+}
+
+/* --- Signature detail: subtle LED / pixel-grid texture behind numerals ---
+   A faint dot matrix evokes an arena LED board without shouting. Used with
+   restraint (low contrast) so the numerals stay the focus. */
+.led-grid {
+	background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1.4px);
+	background-size: 0.9cqh 0.9cqh;
+}
+
+/* Chrome panel + crisp divider helpers used across displays. */
+.chrome-panel {
+	background: linear-gradient(180deg, var(--chrome-800), var(--chrome-900));
+}
+.chrome-inset {
+	background: radial-gradient(120% 140% at 50% 0%, var(--chrome-700), var(--chrome-900));
+	box-shadow: inset 0 0 6cqh rgba(0, 0, 0, 0.6);
+}
+
+/* --- Trigger animations. Displays add one of these classes to their overlay
+   for a fixed duration when a trigger fires, then remove it. --- */
+@keyframes flash-white {
+	0% { opacity: 0; }
+	8% { opacity: 0.92; }
+	100% { opacity: 0; }
+}
+@keyframes flash-amber {
+	0%, 100% { opacity: 0; }
+	10%, 40%, 70% { opacity: 0.85; }
+	25%, 55% { opacity: 0; }
+}
+.flash-white { animation: flash-white 0.9s ease-out; background: #ffffff; }
+.flash-amber { animation: flash-amber 1s steps(1, end); background: #f59e0b; }
+
+/* Confetti: a quick burst of falling colored chips. */
+@keyframes confetti-fall {
+	0% { transform: translateY(-10%) rotate(0deg); opacity: 1; }
+	100% { transform: translateY(120cqh) rotate(720deg); opacity: 0; }
+}
+.confetti-chip {
+	position: absolute;
+	top: -5%;
+	width: 1.4cqh;
+	height: 2.2cqh;
+	animation: confetti-fall linear forwards;
+}
+
+/* Persistent news-broadcast ticker along the bottom of a display. The track
+   holds several copies of the text and scrolls continuously (infinite) so it
+   reads like a real broadcast crawl rather than a one-shot animation. */
+.ticker-bar {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 8cqh;
+	display: flex;
+	align-items: center;
+	overflow: hidden;
+	background: linear-gradient(180deg, rgba(6, 8, 12, 0.72), rgba(6, 8, 12, 0.92));
+	z-index: 45;
+}
+.ticker-track {
+	display: inline-flex;
+	white-space: nowrap;
+	color: #f4f6fb;
+	padding-left: 100%;
+	animation: ticker-scroll 22s linear infinite;
+}
+@keyframes ticker-scroll {
+	0% { transform: translateX(0); }
+	100% { transform: translateX(-100%); }
+}
+
+/* --- Control panel (mobile remote) helpers --- */
+.ctl-card {
+	background: linear-gradient(180deg, var(--chrome-800), var(--chrome-900));
+	border: 1px solid var(--chrome-line);
+	border-radius: 1rem;
+	padding: 0.9rem;
+}
+.ctl-h {
+	font-family: 'Oswald', sans-serif;
+	font-weight: 500;
+	letter-spacing: 0.22em;
+	text-transform: uppercase;
+	font-size: 0.72rem;
+	color: #8b95a6;
+}
+/* Big, high-contrast touch target — legible in a dim gym or daylight. */
+.ctl-btn {
+	border-radius: 0.85rem;
+	font-family: 'Oswald', sans-serif;
+	font-weight: 600;
+	font-size: 1.05rem;
+	padding: 0.9rem 0.75rem;
+	background: #232a36;
+	color: #fff;
+	border: 1px solid var(--chrome-line);
+	touch-action: manipulation;
+	cursor: pointer;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+	transition: transform 90ms ease, filter 90ms ease, box-shadow 90ms ease, background 90ms ease;
+}
+@media (hover: hover) {
+	.ctl-btn:hover { filter: brightness(1.12); }
+}
+/* Clear "I've been pressed" state: the button sinks and brightens while held. */
+.ctl-btn:active {
+	background: #2f3846;
+	transform: scale(0.94);
+	filter: brightness(1.35);
+	box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+/* Momentary afterglow pulse added briefly on tap by the global delegated
+   pointerdown handler in +layout.svelte, so every .ctl-btn gives the same visible
+   confirmation even after the finger lifts. */
+.btn-flash {
+	animation: btn-flash 320ms ease-out;
+}
+@keyframes btn-flash {
+	0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55); }
+	100% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+}
+.ctl-input {
+	background: #0c0f15;
+	border: 1px solid var(--chrome-line);
+	border-radius: 0.6rem;
+	padding: 0.6rem 0.7rem;
+	color: #fff;
+	font-family: 'Oswald', sans-serif;
+}
+
+/* Respect reduced-motion everywhere: keep feedback but drop the movement. */
+@media (prefers-reduced-motion: reduce) {
+	.flash-white { animation: flash-white 0.4s ease-out; }
+	.flash-amber { animation: flash-white 0.4s ease-out; background: #f59e0b; }
+	.confetti-chip { display: none; }
+	.btn-flash { animation: none; }
+	.ctl-btn { transition: background 90ms ease; }
+	.ctl-btn:active { transform: none; }
+	/* Keep the ticker readable but stop the crawl. */
+	.ticker-track { animation: none; padding-left: 2cqw; }
+	* {
+		scroll-behavior: auto !important;
+	}
+}

@@ -1,0 +1,10 @@
+node_modules
+/build
+/.svelte-kit
+/package
+.env
+.DS_Store
+*.local
+
+# Uploaded logos (runtime user content)
+/data/uploads
