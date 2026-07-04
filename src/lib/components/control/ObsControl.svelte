@@ -30,6 +30,12 @@
 		return `camp-browser-${token}`;
 	}
 
+	function managedFeedSourceName(displayId, feed) {
+		const token = slugToken(displayId) || 'display';
+		const feedToken = slugToken(feed) || 'feed';
+		return `camp-feed-${token}-${feedToken}`;
+	}
+
 	function inspectScene(scene) {
 		emit('obs:inspectScene', { scene });
 	}
@@ -58,9 +64,29 @@
 		});
 	}
 
+	function mainDisplay() {
+		return orderedDisplays().find((d) => d.type === 'scoreboard') ?? orderedDisplays()[0] ?? null;
+	}
+
+	function auxDisplays() {
+		const mainId = mainDisplay()?.id;
+		return orderedDisplays().filter((d) => d.id !== mainId);
+	}
+
+	function clockFeedDisplay() {
+		return displays.find((d) => d.type === 'clock') ?? auxDisplays()[0] ?? null;
+	}
+
+	function scoreFeedDisplay() {
+		return displays.find((d) => d.type === 'score') ?? auxDisplays()[1] ?? auxDisplays()[0] ?? null;
+	}
+
 	function buildWallItems() {
 		let x = 0;
 		return orderedDisplays().map((d) => {
+			const isAux = auxDisplays().some((a) => a.id === d.id);
+			const clockFeed = clockFeedDisplay();
+			const scoreFeed = scoreFeedDisplay();
 			const item = {
 				displayId: d.id,
 				url: displayUrl(d.id),
@@ -74,7 +100,16 @@
 				cropBottom: 0,
 				cropLeft: 0,
 				cropRight: 0,
-				enabled: true
+				enabled: true,
+				...(isAux && clockFeed && scoreFeed
+					? {
+						feeds: {
+							clock: displayUrl(clockFeed.id),
+							score: displayUrl(scoreFeed.id)
+						},
+						activeFeed: d.type === 'score' ? 'score' : 'clock'
+					}
+					: {})
 			};
 			x += d.targetWidth + wallGap;
 			return item;
@@ -99,6 +134,19 @@
 			enabled: enabled ? campNames.has(src.name) : !campNames.has(src.name)
 		}));
 		emit('obs:setSourcesVisibility', { scene, updates });
+	}
+
+	function switchAllAuxFeeds(mode) {
+		if (mode !== 'clock' && mode !== 'score') return;
+		for (const d of auxDisplays()) {
+			emit('obs:setSourcesVisibility', {
+				scene: managedSubSceneName(d.id),
+				updates: [
+					{ source: managedFeedSourceName(d.id, 'clock'), enabled: mode === 'clock' },
+					{ source: managedFeedSourceName(d.id, 'score'), enabled: mode === 'score' }
+				]
+			});
+		}
 	}
 
 	function openDisplaySceneControls(displayId) {
@@ -189,9 +237,10 @@
 		</div>
 
 		<div class="mt-4 rounded-xl border p-3" style="border-color:var(--chrome-line);">
-			<div class="mb-2 text-xs text-white/40">Quick wall setup (side by side)</div>
+			<div class="mb-2 text-xs text-white/40">Initial setup and wall composition</div>
 			<div class="mb-2 text-xs text-white/45">
-				Creates/updates one managed scene per display, then places those scenes side-by-side in Main Scene.
+				1) Creates/updates one managed scene per screen slot. 2) For each AUX slot, creates both CLOCK and
+				SCORE browser feeds. 3) Places all managed scenes side-by-side in Main Scene.
 			</div>
 			<div class="mb-2 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 lg:grid-cols-5">
 				<div class="flex items-center gap-2">
@@ -207,15 +256,30 @@
 					<input id="obs-wall-gap" type="number" bind:value={wallGap} class="ctl-input w-full" />
 				</div>
 				<button class="ctl-btn w-full !py-2 text-sm sm:col-span-2 lg:col-span-2" onclick={quickSetupWall}>
-					Apply Managed Wall
+					Run Initial Setup + Update Wall
 				</button>
 			</div>
+
+			<div class="mb-3 rounded-lg p-2" style="background:#0c0f15; border:1px solid var(--chrome-line);">
+				<div class="mb-2 text-xs text-white/45">
+					Quick switch AUX screens (keeps same scene slots, changes active feed):
+				</div>
+				<div class="flex flex-col gap-2 sm:flex-row">
+					<button class="ctl-btn w-full !py-2 text-sm" onclick={() => switchAllAuxFeeds('clock')}>
+						Show CLOCK on all AUX screens
+					</button>
+					<button class="ctl-btn w-full !py-2 text-sm" onclick={() => switchAllAuxFeeds('score')}>
+						Show SCORE on all AUX screens
+					</button>
+				</div>
+			</div>
+
 			<div class="mb-3 flex flex-col gap-2 sm:flex-row">
 				<button class="ctl-btn w-full !py-2 text-sm" onclick={() => setCampSourcesOnly(true)}>
-					Camp Sources Only
+					Main Scene: Show managed screen scenes only
 				</button>
 				<button class="ctl-btn w-full !py-2 text-sm" onclick={() => setCampSourcesOnly(false)}>
-					Other Sources Only
+					Main Scene: Show non-managed sources only
 				</button>
 			</div>
 			<div class="break-words text-xs text-white/45">
@@ -224,10 +288,10 @@
 		</div>
 
 		<div class="mt-4 rounded-xl border p-3" style="border-color:var(--chrome-line);">
-			<div class="mb-2 text-xs text-white/40">Managed screen scenes (auto-created, no duplicates)</div>
+			<div class="mb-2 text-xs text-white/40">Managed screen scenes (control each slot)</div>
 			<div class="mb-3 text-xs text-white/45">
-				Each display has a stable scene name + stable browser source name. Add other sources in those scenes,
-				then control visibility from this app.
+				These scenes are persistent slot containers. Put extra sources (videos, images, YouTube) into them in OBS,
+				then use Open Scene Controls to toggle per-slot content.
 			</div>
 			<div class="flex flex-col gap-2">
 				{#each displays as d (d.id)}
@@ -239,16 +303,31 @@
 								<div class="mt-1 text-xs text-white/40">
 									Scene: {managedSubSceneName(d.id)}
 								</div>
-								<div class="text-xs text-white/40">
-									Browser: {managedBrowserSourceName(d.id)}
-								</div>
+								{#if auxDisplays().some((a) => a.id === d.id)}
+									<div class="text-xs text-white/40">
+										Feed source: {managedFeedSourceName(d.id, 'clock')} (clock)
+									</div>
+									<div class="text-xs text-white/40">
+										Feed source: {managedFeedSourceName(d.id, 'score')} (score)
+									</div>
+								{:else}
+									<div class="text-xs text-white/40">
+										Browser: {managedBrowserSourceName(d.id)}
+									</div>
+								{/if}
 							</div>
 							<div class="text-xs text-white/45">{d.targetWidth}x{d.targetHeight}</div>
 						</div>
 						<div class="flex flex-col gap-2 sm:flex-row">
-							<button class="ctl-btn w-full !py-2 text-sm" onclick={() => upsertDisplayBrowserInManagedScene(d)}>
-								Update Browser URL
-							</button>
+							{#if auxDisplays().some((a) => a.id === d.id)}
+								<button class="ctl-btn w-full !py-2 text-sm" onclick={quickSetupWall}>
+									Repair feeds from display URLs
+								</button>
+							{:else}
+								<button class="ctl-btn w-full !py-2 text-sm" onclick={() => upsertDisplayBrowserInManagedScene(d)}>
+									Update Browser URL
+								</button>
+							{/if}
 							<button class="ctl-btn w-full !py-2 text-sm" onclick={() => openDisplaySceneControls(d.id)}>
 								Open Scene Controls
 							</button>

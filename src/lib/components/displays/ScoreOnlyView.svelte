@@ -31,13 +31,13 @@
 
 				<span
 					class="font-timer"
-					style="font-size:9cqh; line-height:1; color:{t.color}; text-shadow:0 0 1.5cqh #ffffff59, 0 0 3.2cqh #ffffff26;"
+					style="font-size:9cqh; line-height:1; color:{t.color}; text-shadow:0 0 2.2cqh #fff7e899, 0 0 4.8cqh #fff7e840;"
 					>{t.name}</span
 				>
 
 				<span
 					class="font-score tabular-nums"
-					style="font-size:66cqh; line-height:0.8; color:{t.color}; text-shadow:0 0 2.4cqh #ffffff66, 0 0 5.4cqh #ffffff30, 0 0 8.2cqh #ffffff14; margin:4cqh 0;"
+					style="font-size:66cqh; line-height:0.8; color:{t.color}; text-shadow:0 0 3.4cqh #fff7e857, 0 0 7.8cqh #fff7e82b, 0 0 12.5cqh #fff7e814; margin:4cqh 0;"
 				>
 					{gameState.score[t.side]}
 				</span>

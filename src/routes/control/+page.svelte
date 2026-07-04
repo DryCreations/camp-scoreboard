@@ -11,7 +11,6 @@
 	import TriggerPanel from '$lib/components/control/TriggerPanel.svelte';
 	import SoundboardPanel from '$lib/components/control/SoundboardPanel.svelte';
 	import TickerPanel from '$lib/components/control/TickerPanel.svelte';
-	import ObsControl from '$lib/components/control/ObsControl.svelte';
 
 	// Live board control. Everything here is per-play operation; branding, sounds,
 	// displays and game-rule settings live on /settings to keep this view focused.
@@ -40,7 +39,6 @@
 			<TickerPanel />
 			<TriggerPanel />
 			<SoundboardPanel />
-			<ObsControl />
 		</div>
 	{:else}
 		<p class="text-white/60">Connecting…</p>

@@ -6,6 +6,7 @@
 	let path = $derived($page.url.pathname);
 	const tabs = [
 		{ href: '/control', label: 'Control' },
+		{ href: '/obs', label: 'OBS' },
 		{ href: '/settings', label: 'Settings' }
 	];
 </script>

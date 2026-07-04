@@ -86,12 +86,51 @@ function managedToken(value) {
 		.replace(/^-|-$/g, '');
 }
 
+function autoCropForCover(sourceWidth, sourceHeight, slotWidth, slotHeight) {
+	const srcW = Math.max(1, Number(sourceWidth) || 1);
+	const srcH = Math.max(1, Number(sourceHeight) || 1);
+	const dstW = Math.max(1, Number(slotWidth) || 1);
+	const dstH = Math.max(1, Number(slotHeight) || 1);
+
+	const srcAspect = srcW / srcH;
+	const dstAspect = dstW / dstH;
+
+	let cropLeft = 0;
+	let cropRight = 0;
+	let cropTop = 0;
+	let cropBottom = 0;
+
+	if (Math.abs(srcAspect - dstAspect) < 0.0001) {
+		return { cropLeft, cropRight, cropTop, cropBottom };
+	}
+
+	if (srcAspect > dstAspect) {
+		const visibleWidth = srcH * dstAspect;
+		const totalCrop = Math.max(0, srcW - visibleWidth);
+		cropLeft = Math.floor(totalCrop / 2);
+		cropRight = Math.floor(totalCrop - cropLeft);
+	} else {
+		const visibleHeight = srcW / dstAspect;
+		const totalCrop = Math.max(0, srcH - visibleHeight);
+		cropTop = Math.floor(totalCrop / 2);
+		cropBottom = Math.floor(totalCrop - cropTop);
+	}
+
+	return { cropLeft, cropRight, cropTop, cropBottom };
+}
+
 export function managedNamesForDisplay(displayId) {
 	const token = managedToken(displayId) || 'display';
 	return {
 		subSceneName: `camp-view-${token}`,
 		browserSourceName: `camp-browser-${token}`
 	};
+}
+
+function managedFeedSourceName(displayId, feedKey) {
+	const displayToken = managedToken(displayId) || 'display';
+	const feedToken = managedToken(feedKey) || 'feed';
+	return `camp-feed-${displayToken}-${feedToken}`;
 }
 
 export function switchScene(sceneName) {
@@ -111,6 +150,15 @@ export function toggleSource(sceneName, sourceName, enabled) {
 async function getSceneItemId(sceneName, sourceName) {
 	const { sceneItemId } = await obs.call('GetSceneItemId', { sceneName, sourceName });
 	return sceneItemId;
+}
+
+async function getSceneItemTransform(sceneName, sourceName) {
+	const sceneItemId = await getSceneItemId(sceneName, sourceName);
+	const { sceneItemTransform } = await obs.call('GetSceneItemTransform', {
+		sceneName,
+		sceneItemId
+	});
+	return sceneItemTransform ?? {};
 }
 
 async function ensureSceneItem(sceneName, sourceName) {
@@ -227,44 +275,114 @@ export function applyManagedWallLayout(mainSceneName, items = []) {
 			if (!item?.displayId || !item?.url) continue;
 			const width = Math.max(16, Math.floor(Number(item.width) || 0));
 			const height = Math.max(16, Math.floor(Number(item.height) || 0));
+			const slotWidth = Math.max(16, Math.floor(Number(item.slotWidth) || width));
+			const slotHeight = Math.max(16, Math.floor(Number(item.slotHeight) || height));
 			const { subSceneName, browserSourceName } = managedNamesForDisplay(item.displayId);
+			const feeds = item.feeds && typeof item.feeds === 'object' ? item.feeds : null;
+			const activeFeed = managedToken(item.activeFeed || '');
 
 			await ensureScene(subSceneName);
-			await upsertBrowserSourceRaw({
-				sceneName: subSceneName,
-				sourceName: browserSourceName,
-				url: item.url,
-				width,
-				height
-			});
+			if (feeds && Object.keys(feeds).length) {
+				const updates = [];
+				for (const [feedKey, feedUrl] of Object.entries(feeds)) {
+					if (!feedUrl) continue;
+					const feedSourceName = managedFeedSourceName(item.displayId, feedKey);
+					await upsertBrowserSourceRaw({
+						sceneName: subSceneName,
+						sourceName: feedSourceName,
+						url: String(feedUrl),
+						width,
+						height
+					});
+					await setSourceTransformRaw(subSceneName, feedSourceName, {
+						positionX: 0,
+						positionY: 0,
+						scaleX: 1,
+						scaleY: 1,
+						cropTop: 0,
+						cropBottom: 0,
+						cropLeft: 0,
+						cropRight: 0,
+						boundsType: 'OBS_BOUNDS_STRETCH',
+						boundsWidth: width,
+						boundsHeight: height
+					});
+					updates.push({
+						source: feedSourceName,
+						enabled:
+							activeFeed && managedToken(feedKey) === activeFeed
+								? true
+								: !activeFeed && updates.length === 0
+					});
+				}
+				if (updates.length) {
+					await setSourcesVisibilityBatchRaw(subSceneName, updates);
+				}
+			} else {
+				await upsertBrowserSourceRaw({
+					sceneName: subSceneName,
+					sourceName: browserSourceName,
+					url: item.url,
+					width,
+					height
+				});
 
-			// Keep each managed subscene tightly framed to its intended dimensions.
-			await setSourceTransformRaw(subSceneName, browserSourceName, {
-				positionX: 0,
-				positionY: 0,
-				scaleX: 1,
-				scaleY: 1,
-				cropTop: 0,
-				cropBottom: 0,
-				cropLeft: 0,
-				cropRight: 0,
-				boundsType: 'OBS_BOUNDS_STRETCH',
-				boundsWidth: width,
-				boundsHeight: height
-			});
+				// Keep each managed subscene tightly framed to its intended dimensions.
+				await setSourceTransformRaw(subSceneName, browserSourceName, {
+					positionX: 0,
+					positionY: 0,
+					scaleX: 1,
+					scaleY: 1,
+					cropTop: 0,
+					cropBottom: 0,
+					cropLeft: 0,
+					cropRight: 0,
+					boundsType: 'OBS_BOUNDS_STRETCH',
+					boundsWidth: width,
+					boundsHeight: height
+				});
+			}
+
+			const mainSceneItemTransform = await getSceneItemTransform(mainSceneName, subSceneName);
+			const sourceFrameWidth =
+				Math.max(1, Math.floor(Number(mainSceneItemTransform.sourceWidth) || 0)) || width;
+			const sourceFrameHeight =
+				Math.max(1, Math.floor(Number(mainSceneItemTransform.sourceHeight) || 0)) || height;
+
+			const autoCrop = autoCropForCover(sourceFrameWidth, sourceFrameHeight, slotWidth, slotHeight);
+			const manualCropLeft = Math.max(0, Math.floor(Number(item.cropLeft) || 0));
+			const manualCropRight = Math.max(0, Math.floor(Number(item.cropRight) || 0));
+			const manualCropTop = Math.max(0, Math.floor(Number(item.cropTop) || 0));
+			const manualCropBottom = Math.max(0, Math.floor(Number(item.cropBottom) || 0));
+
+			const cropLeft = Math.min(sourceFrameWidth - 1, autoCrop.cropLeft + manualCropLeft);
+			const cropRight = Math.min(
+				sourceFrameWidth - 1 - cropLeft,
+				autoCrop.cropRight + manualCropRight
+			);
+			const cropTop = Math.min(sourceFrameHeight - 1, autoCrop.cropTop + manualCropTop);
+			const cropBottom = Math.min(
+				sourceFrameHeight - 1 - cropTop,
+				autoCrop.cropBottom + manualCropBottom
+			);
+
+			const visibleWidth = Math.max(1, sourceFrameWidth - cropLeft - cropRight);
+			const visibleHeight = Math.max(1, sourceFrameHeight - cropTop - cropBottom);
+			const baseScaleX = slotWidth / visibleWidth;
+			const baseScaleY = slotHeight / visibleHeight;
 
 			await setSourceTransformRaw(mainSceneName, subSceneName, {
 				positionX: Number(item.x) || 0,
 				positionY: Number(item.y) || 0,
-				scaleX: Number(item.scaleX) || 1,
-				scaleY: Number(item.scaleY) || 1,
-				cropTop: Math.max(0, Number(item.cropTop) || 0),
-				cropBottom: Math.max(0, Number(item.cropBottom) || 0),
-				cropLeft: Math.max(0, Number(item.cropLeft) || 0),
-				cropRight: Math.max(0, Number(item.cropRight) || 0),
-				boundsType: 'OBS_BOUNDS_STRETCH',
-				boundsWidth: width,
-				boundsHeight: height
+				scaleX: baseScaleX * (Number(item.scaleX) || 1),
+				scaleY: baseScaleY * (Number(item.scaleY) || 1),
+				cropTop,
+				cropBottom,
+				cropLeft,
+				cropRight,
+				boundsType: 'OBS_BOUNDS_NONE',
+				boundsWidth: slotWidth,
+				boundsHeight: slotHeight
 			});
 
 			await toggleSourceRaw(mainSceneName, subSceneName, item.enabled ?? true);
