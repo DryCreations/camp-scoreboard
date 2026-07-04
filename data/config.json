@@ -6,9 +6,9 @@
 	"theme": {
 		"homeColor": "#2563eb",
 		"awayColor": "#dc2626",
-		"gradientStart": "#253851",
-		"gradientMid": "#18273d",
-		"gradientEnd": "#0b1321",
+		"gradientStart": "#647b95",
+		"gradientMid": "#34475e",
+		"gradientEnd": "#1d2b36",
 		"gradientMode": "radial",
 		"gradientCenter": "50% 14%",
 		"gradientSize": "118% 92%",

@@ -14,10 +14,12 @@
 	// Upload a logo from the device (phone camera roll / file picker), then store
 	// the returned server path in the theme.
 	let uploading = $state({ homeLogo: false, awayLogo: false, centerLogo: false });
+	let uploadError = $state({ homeLogo: '', awayLogo: '', centerLogo: '' });
 	async function upload(key, fileList) {
 		const file = fileList?.[0];
 		if (!file) return;
 		uploading[key] = true;
+		uploadError[key] = '';
 		try {
 			const body = new FormData();
 			body.append('file', file);
@@ -25,7 +27,18 @@
 			if (res.ok) {
 				const { path } = await res.json();
 				set(key, path);
+			} else {
+				// Surface failures instead of silently doing nothing. The common one
+				// in production is 413 when the image exceeds the server's size limit.
+				uploadError[key] =
+					res.status === 413
+						? 'Image too large for the server limit.'
+						: `Upload failed (${res.status}).`;
+				console.error('[upload] failed', res.status, await res.text().catch(() => ''));
 			}
+		} catch (err) {
+			uploadError[key] = 'Upload failed — is the server reachable?';
+			console.error('[upload] error', err);
 		} finally {
 			uploading[key] = false;
 		}
@@ -140,6 +153,9 @@
 							onchange={(e) => set(key, e.currentTarget.value)}
 							class="ctl-input mt-2 w-full text-xs"
 						/>
+						{#if uploadError[key]}
+							<p class="mt-1 text-xs text-red-400">{uploadError[key]}</p>
+						{/if}
 					</div>
 					{#if theme[key]}
 						<button class="ctl-btn !px-3 text-sm" onclick={() => set(key, '')}>Clear</button>
