@@ -1,7 +1,13 @@
 import { Server } from 'socket.io';
 import * as S from './state.js';
 import { fireTrigger } from './triggers.js';
-import { switchScene, toggleSource, fetchObsState } from './obs.js';
+import {
+	toggleSource,
+	fetchObsState,
+	upsertBrowserSource,
+	setSourceTransform,
+	setSourcesVisibilityBatch
+} from './obs.js';
 
 // Triggers fired automatically when a clock reaches zero.
 const END_OF_TIMER_TRIGGER = 'buzzer';
@@ -147,16 +153,55 @@ export function attachSocket(httpServer) {
 		});
 
 		// --- OBS live control (direct manual switching, separate from triggers) ---
-		socket.on('obs:refresh', async () => {
-			socket.emit('obs:state', await fetchObsState());
+		socket.on('obs:refresh', async ({ scene } = {}) => {
+			socket.emit('obs:state', await fetchObsState(scene));
 		});
-		socket.on('obs:setScene', async ({ scene }) => {
-			await switchScene(scene);
-			io.emit('obs:state', await fetchObsState());
+		socket.on('obs:inspectScene', async ({ scene }) => {
+			socket.emit('obs:state', await fetchObsState(scene));
 		});
 		socket.on('obs:toggleSource', async ({ scene, source, enabled }) => {
 			await toggleSource(scene, source, enabled);
-			io.emit('obs:state', await fetchObsState());
+			io.emit('obs:state', await fetchObsState(scene));
+		});
+		socket.on('obs:upsertBrowserSource', async ({ scene, source, url, width, height }) => {
+			await upsertBrowserSource({
+				sceneName: scene,
+				sourceName: source,
+				url,
+				width,
+				height
+			});
+			io.emit('obs:state', await fetchObsState(scene));
+		});
+		socket.on('obs:setSourcesVisibility', async ({ scene, updates }) => {
+			await setSourcesVisibilityBatch(scene, updates);
+			io.emit('obs:state', await fetchObsState(scene));
+		});
+		socket.on('obs:quickSetupWall', async ({ scene, items = [] }) => {
+			for (const item of items) {
+				if (!item?.source || !item?.url) continue;
+				await upsertBrowserSource({
+					sceneName: scene,
+					sourceName: item.source,
+					url: item.url,
+					width: item.width,
+					height: item.height
+				});
+
+				await setSourceTransform(scene, item.source, {
+					positionX: Number(item.x) || 0,
+					positionY: Number(item.y) || 0,
+					scaleX: Number(item.scaleX) || 1,
+					scaleY: Number(item.scaleY) || 1,
+					cropTop: Math.max(0, Number(item.cropTop) || 0),
+					cropBottom: Math.max(0, Number(item.cropBottom) || 0),
+					cropLeft: Math.max(0, Number(item.cropLeft) || 0),
+					cropRight: Math.max(0, Number(item.cropRight) || 0)
+				});
+
+				await toggleSource(scene, item.source, item.enabled ?? true);
+			}
+			io.emit('obs:state', await fetchObsState(scene));
 		});
 	});
 

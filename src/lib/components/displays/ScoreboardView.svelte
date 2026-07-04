@@ -20,6 +20,7 @@
 	});
 
 	let shotClockSeconds = $derived(msToSeconds(remainingMsFrom(gameState.shotClock, currentTime)));
+	let bonus = $derived(Number(gameState.settings?.bonusThreshold) || 0);
 
 	let hasTeamLogos = $derived(teams[0]?.logo && teams[1]?.logo);
 	let centerLogo = $derived(theme.centerLogo);
@@ -43,6 +44,12 @@
 			fouls: gameState.fouls.away
 		}
 	]);
+
+	function inBonus(side) {
+		if (!bonus) return false;
+		const opponent = side === 'home' ? 'away' : 'home';
+		return (gameState.fouls?.[opponent] ?? 0) >= bonus;
+	}
 </script>
 
 <DisplayBase {entry} {theme} {trigger} overlay={gameState.overlay} ticker={gameState.ticker}>
@@ -82,6 +89,14 @@
 					<div class="font-label" style="font-size:3cqh; color:#d7dfef; letter-spacing:0.1em;">
 						FOULS: {teams[0]?.fouls}
 					</div>
+
+					<div style="height:5.2cqh; display:flex; align-items:center; justify-content:center;">
+						<span
+							class="font-label"
+							style="font-size:2.8cqh; padding:0.35cqh 1.3cqh; color:#0a0c10; background:#f59e0b; border-radius:9999px; opacity:{inBonus(teams[0]?.side) ? '1' : '0'}; transition:opacity 0.2s ease;"
+							>Bonus</span
+						>
+					</div>
 				</div>
 
 				<!-- CENTER COLUMN: TOURNAMENT LOGO (if center mode) or TIMER & INFO -->
@@ -108,7 +123,7 @@
 					</div>
 					
 					<!-- Reserved space for shot clock (prevents layout shift) - uses height not min-height -->
-					<div style="height:18.4cqh; display:flex; align-items:center; justify-content:center;">
+					<div style="height:18.4cqh; margin-top:1.6cqh; display:flex; align-items:center; justify-content:center;">
 						<div class="flex flex-col items-center justify-center" style="gap:0.4cqh; background:rgba(245,158,11,0.12); padding:1.5cqh 3cqw; border:0.35cqh solid #f59e0b; border-radius:2cqh; min-width:18cqw; opacity:{gameState.shotClock.running ? '1' : '0'}; pointer-events:{gameState.shotClock.running ? 'auto' : 'none'}; transition:opacity 0.2s ease;">
 							<div class="font-label" style="font-size:4cqh; color:#f59e0b; letter-spacing:0.15em;">SHOT</div>
 							<!-- Fixed-width digit box so 1- vs 2-digit numbers never resize the badge. -->
@@ -157,6 +172,14 @@
 					
 					<div class="font-label" style="font-size:3cqh; color:#d7dfef; letter-spacing:0.1em;">
 						FOULS: {teams[1]?.fouls}
+					</div>
+
+					<div style="height:5.2cqh; display:flex; align-items:center; justify-content:center;">
+						<span
+							class="font-label"
+							style="font-size:2.8cqh; padding:0.35cqh 1.3cqh; color:#0a0c10; background:#f59e0b; border-radius:9999px; opacity:{inBonus(teams[1]?.side) ? '1' : '0'}; transition:opacity 0.2s ease;"
+							>Bonus</span
+						>
 					</div>
 				</div>
 

@@ -10,6 +10,16 @@ import { listSounds } from './sounds.js';
 
 const config = loadConfig();
 
+const DISPLAY_DEFAULTS = {
+	scoreboard: { width: 3840, height: 2160 },
+	clock: { width: 1152, height: 720 },
+	score: { width: 1152, height: 720 }
+};
+
+function defaultResolutionForType(type) {
+	return DISPLAY_DEFAULTS[type] ?? { width: 1152, height: 720 };
+}
+
 export const state = {
 	score: { home: 0, away: 0 },
 	fouls: { home: 0, away: 0 },
@@ -199,12 +209,14 @@ export function updateTheme(patch) {
 // --- Display registry (persisted) ---
 
 export function addDisplay({ label, type, targetWidth, targetHeight }) {
+	const resolvedType = type || 'scoreboard';
+	const defaults = defaultResolutionForType(resolvedType);
 	const entry = {
 		id: randomUUID().slice(0, 8),
 		label: label || 'New Display',
-		type: type || 'scoreboard',
-		targetWidth: Number(targetWidth) || 1920,
-		targetHeight: Number(targetHeight) || 1080
+		type: resolvedType,
+		targetWidth: Number(targetWidth) || defaults.width,
+		targetHeight: Number(targetHeight) || defaults.height
 	};
 	state.displays = [...state.displays, entry];
 	persist();

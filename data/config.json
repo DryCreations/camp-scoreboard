@@ -32,15 +32,15 @@
 			"id": "clock",
 			"label": "Clock Display",
 			"type": "clock",
-			"targetWidth": 1920,
-			"targetHeight": 1080
+			"targetWidth": 1152,
+			"targetHeight": 720
 		},
 		{
 			"id": "score",
 			"label": "Score Display",
 			"type": "score",
-			"targetWidth": 1920,
-			"targetHeight": 1080
+			"targetWidth": 1152,
+			"targetHeight": 720
 		}
 	],
 	"triggers": [

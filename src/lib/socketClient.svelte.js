@@ -11,7 +11,7 @@ export const store = $state({
 	/** Bumped whenever the server fires a trigger, so displays can react. */
 	trigger: { id: null, animation: null, sound: null, seq: 0 },
 	/** Live OBS remote state: scene list, current scene, sources in it. */
-	obs: { connected: false, scenes: [], currentScene: null, sources: [] },
+	obs: { connected: false, scenes: [], currentScene: null, selectedScene: null, sources: [] },
 	/** ms to add to this device's Date.now() to match the SERVER clock. This is
 	 *  what keeps every client's countdown in sync even when device system clocks
 	 *  are skewed by seconds relative to each other. */

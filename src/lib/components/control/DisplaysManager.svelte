@@ -2,16 +2,33 @@
 	import { store, emit } from '$lib/socketClient.svelte.js';
 	import { displayTypeOptions } from '$lib/displayTypes.js';
 
+	const DISPLAY_DEFAULTS = {
+		scoreboard: { width: 3840, height: 2160 },
+		clock: { width: 1152, height: 720 },
+		score: { width: 1152, height: 720 }
+	};
+
+	function defaultResolutionForType(nextType) {
+		return DISPLAY_DEFAULTS[nextType] ?? { width: 1152, height: 720 };
+	}
+
 	let displays = $derived(store.state.displays);
 
 	// New-display form state.
 	let label = $state('New Display');
 	let type = $state('scoreboard');
-	let width = $state(1920);
-	let height = $state(1080);
+	let width = $state(3840);
+	let height = $state(2160);
 
 	function add() {
 		emit('display:add', { label, type, targetWidth: Number(width), targetHeight: Number(height) });
+	}
+
+	function setAddType(nextType) {
+		type = nextType;
+		const defaults = defaultResolutionForType(nextType);
+		width = defaults.width;
+		height = defaults.height;
 	}
 	function update(id, patch) {
 		emit('display:update', { id, patch });
@@ -92,7 +109,7 @@
 		<div class="ctl-h mb-2">Add display</div>
 		<div class="mb-2 flex gap-2">
 			<input type="text" bind:value={label} class="ctl-input flex-1" />
-			<select bind:value={type} class="ctl-input">
+			<select value={type} onchange={(e) => setAddType(e.currentTarget.value)} class="ctl-input">
 				{#each displayTypeOptions as opt}
 					<option value={opt}>{opt}</option>
 				{/each}

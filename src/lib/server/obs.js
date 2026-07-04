@@ -89,6 +89,101 @@ export function toggleSource(sceneName, sourceName, enabled) {
 	});
 }
 
+async function getSceneItemId(sceneName, sourceName) {
+	const { sceneItemId } = await obs.call('GetSceneItemId', { sceneName, sourceName });
+	return sceneItemId;
+}
+
+async function ensureSceneItem(sceneName, sourceName) {
+	try {
+		await getSceneItemId(sceneName, sourceName);
+		return;
+	} catch {
+		await obs.call('CreateSceneItem', {
+			sceneName,
+			sourceName,
+			sceneItemEnabled: true
+		});
+	}
+}
+
+export function upsertBrowserSource({ sceneName, sourceName, url, width, height }) {
+	if (!sceneName || !sourceName || !url) return Promise.resolve(false);
+	const targetWidth = Math.max(320, Math.floor(Number(width) || 1920));
+	const targetHeight = Math.max(180, Math.floor(Number(height) || 1080));
+
+	return safeCall(async () => {
+		let existingKind = null;
+		try {
+			const info = await obs.call('GetInputSettings', { inputName: sourceName });
+			existingKind = info?.inputKind ?? null;
+		} catch {
+			existingKind = null;
+		}
+
+		const inputSettings = {
+			url,
+			width: targetWidth,
+			height: targetHeight,
+			restart_when_active: true,
+			shutdown: false,
+			reroute_audio: false,
+			css: ''
+		};
+
+		if (!existingKind) {
+			await obs.call('CreateInput', {
+				sceneName,
+				inputName: sourceName,
+				inputKind: 'browser_source',
+				inputSettings,
+				sceneItemEnabled: true
+			});
+			return;
+		}
+
+		if (existingKind !== 'browser_source') {
+			throw new Error(`input "${sourceName}" exists but is ${existingKind}`);
+		}
+
+		await obs.call('SetInputSettings', {
+			inputName: sourceName,
+			inputSettings,
+			overlay: true
+		});
+		await ensureSceneItem(sceneName, sourceName);
+	});
+}
+
+export function setSourceTransform(sceneName, sourceName, transform) {
+	if (!sceneName || !sourceName || !transform) return Promise.resolve(false);
+	return safeCall(async () => {
+		await ensureSceneItem(sceneName, sourceName);
+		const sceneItemId = await getSceneItemId(sceneName, sourceName);
+		await obs.call('SetSceneItemTransform', {
+			sceneName,
+			sceneItemId,
+			sceneItemTransform: transform
+		});
+	});
+}
+
+export function setSourcesVisibilityBatch(sceneName, updates = []) {
+	if (!sceneName || !Array.isArray(updates) || updates.length === 0) return Promise.resolve(false);
+	return safeCall(async () => {
+		for (const update of updates) {
+			if (!update?.source) continue;
+			await ensureSceneItem(sceneName, update.source);
+			const sceneItemId = await getSceneItemId(sceneName, update.source);
+			await obs.call('SetSceneItemEnabled', {
+				sceneName,
+				sceneItemId,
+				sceneItemEnabled: !!update.enabled
+			});
+		}
+	});
+}
+
 export function isConnected() {
 	return connected;
 }
@@ -98,27 +193,39 @@ export function isConnected() {
  * program scene, and the sources (with visibility) in that scene. Returns a
  * disconnected shape rather than throwing when OBS is offline.
  */
-export async function fetchObsState() {
-	if (!connected) return { connected: false, scenes: [], currentScene: null, sources: [] };
+export async function fetchObsState(selectedSceneName = null) {
+	if (!connected) {
+		return { connected: false, scenes: [], currentScene: null, selectedScene: null, sources: [] };
+	}
 	try {
 		const { scenes, currentProgramSceneName } = await obs.call('GetSceneList');
 		// OBS returns scenes bottom-to-top; reverse to match the UI order.
 		const sceneNames = scenes.map((s) => s.sceneName).reverse();
+		const selectedScene =
+			selectedSceneName && sceneNames.includes(selectedSceneName)
+				? selectedSceneName
+				: currentProgramSceneName;
 
 		let sources = [];
-		if (currentProgramSceneName) {
+		if (selectedScene) {
 			const { sceneItems } = await obs.call('GetSceneItemList', {
-				sceneName: currentProgramSceneName
+				sceneName: selectedScene
 			});
 			sources = sceneItems.map((i) => ({
 				name: i.sourceName,
 				enabled: i.sceneItemEnabled
 			}));
 		}
-		return { connected: true, scenes: sceneNames, currentScene: currentProgramSceneName, sources };
+		return {
+			connected: true,
+			scenes: sceneNames,
+			currentScene: currentProgramSceneName,
+			selectedScene,
+			sources
+		};
 	} catch (err) {
 		console.warn('[obs] fetch state failed:', err?.message ?? err);
-		return { connected: false, scenes: [], currentScene: null, sources: [] };
+		return { connected: false, scenes: [], currentScene: null, selectedScene: null, sources: [] };
 	}
 }
 

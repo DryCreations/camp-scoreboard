@@ -6,6 +6,12 @@
 	let theme = $derived(gameState.theme);
 	let bonus = $derived(Number(gameState.settings?.bonusThreshold) || 0);
 
+	function inBonus(side) {
+		if (!bonus) return false;
+		const opponent = side === 'home' ? 'away' : 'home';
+		return (gameState.fouls?.[opponent] ?? 0) >= bonus;
+	}
+
 	let teams = $derived([
 		{ side: 'home', color: theme.homeColor, name: theme.homeName },
 		{ side: 'away', color: theme.awayColor, name: theme.awayName }
@@ -23,23 +29,26 @@
 		{#each teams as t, i}
 			<div class="relative flex flex-1 flex-col items-center justify-center" style="gap:3.5cqh;">
 
-				<span class="font-timer" style="font-size:9cqh; line-height:1; color:{t.color};">{t.name}</span>
+				<span
+					class="font-timer"
+					style="font-size:9cqh; line-height:1; color:{t.color}; text-shadow:0 0 1.5cqh #ffffffbb, 0 0 3.2cqh #ffffff77;"
+					>{t.name}</span
+				>
 
 				<span
 					class="font-score tabular-nums"
-					style="font-size:66cqh; line-height:0.8; color:{t.color}; text-shadow:0 0 6cqh {t.color}55; margin:4cqh 0;"
+					style="font-size:66cqh; line-height:0.8; color:{t.color}; text-shadow:0 0 2.4cqh #ffffffd9, 0 0 5.4cqh #ffffff88, 0 0 8.2cqh #ffffff4d; margin:4cqh 0;"
 				>
 					{gameState.score[t.side]}
 				</span>
 
-				<!-- A team is "in the bonus" when its OPPONENT has reached the foul
-				     limit (that team then shoots free throws) — standard basketball rule. -->
-				{#if bonus && gameState.fouls[t.side === 'home' ? 'away' : 'home'] >= bonus}
+				<!-- Fixed-height badge row prevents score/name baseline shifting when bonus toggles. -->
+				<div style="height:5.2cqh; display:flex; align-items:center; justify-content:center;">
 					<span
 						class="font-label"
-						style="font-size:3cqh; padding:0.4cqh 1.4cqh; color:#0a0c10; background:#f59e0b;">Bonus</span
+						style="font-size:3cqh; padding:0.4cqh 1.4cqh; color:#0a0c10; background:#f59e0b; opacity:{inBonus(t.side) ? '1' : '0'}; transition:opacity 0.2s ease;">Bonus</span
 					>
-				{/if}
+				</div>
 			</div>
 			{#if i === 0}
 				<div style="height:70%; background:var(--chrome-line);"></div>
