@@ -6,9 +6,23 @@
 	// server persists to config.json and rebroadcasts, so displays reflect edits
 	// live with no reload.
 	let theme = $derived(store.state.theme);
+	let displays = $derived(store.state?.displays ?? []);
 
 	function set(key, value) {
 		emit('theme:update', { [key]: value });
+	}
+
+	function logoVisibleForDisplay(id) {
+		return theme.logoVisibility?.[id] !== false;
+	}
+
+	function setLogoVisibility(id, visible) {
+		emit('theme:update', {
+			logoVisibility: {
+				...(theme.logoVisibility ?? {}),
+				[id]: !!visible
+			}
+		});
 	}
 
 	// Upload a logo from the device (phone camera roll / file picker), then store
@@ -37,7 +51,7 @@
 				console.error('[upload] failed', res.status, await res.text().catch(() => ''));
 			}
 		} catch (err) {
-			uploadError[key] = 'Upload failed — is the server reachable?';
+			uploadError[key] = 'Upload failed - is the server reachable?';
 			console.error('[upload] error', err);
 		} finally {
 			uploading[key] = false;
@@ -177,5 +191,27 @@
 				/>
 			</label>
 		{/each}
+	</div>
+
+	<div class="mt-4 rounded-xl p-3" style="background:#0c0f15;">
+		<div class="ctl-h mb-2">Logo Visibility By Display</div>
+		<div class="text-xs text-white/50 mb-3">
+			Toggle logos for each configured display output.
+		</div>
+		<div class="flex flex-col gap-2">
+			{#each displays as d (d.id)}
+				<label class="flex items-center justify-between rounded-lg px-3 py-2" style="background:#090c12; border:1px solid var(--chrome-line);">
+					<div class="min-w-0 pr-3">
+						<div class="truncate text-sm text-white/90">{d.label}</div>
+						<div class="text-xs text-white/45">/display/{d.id}</div>
+					</div>
+					<input
+						type="checkbox"
+						checked={logoVisibleForDisplay(d.id)}
+						onchange={(e) => setLogoVisibility(d.id, e.currentTarget.checked)}
+					/>
+				</label>
+			{/each}
+		</div>
 	</div>
 </section>

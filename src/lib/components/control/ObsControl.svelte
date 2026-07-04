@@ -226,12 +226,11 @@
 
 		<div class="mb-3 rounded-xl p-3" style="background:#0c0f15;">
 			<div class="mb-1 text-xs text-white/40">Live program scene</div>
-			<div class="text-sm text-white/85">{obs.currentScene ?? '—'}</div>
-			<div class="mt-2 text-xs text-white/45">The app does not rename or replace this scene automatically.</div>
+			<div class="text-sm text-white/85">{obs.currentScene ?? 'N/A'}</div>
 		</div>
 
 		<div class="mb-3">
-			<div class="mb-2 text-xs text-white/40">Scenes — tap to control source visibility</div>
+			<div class="mb-2 text-xs text-white/40">Scenes: tap to control source visibility</div>
 			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 				{#each obs.scenes as scene}
 					<button
@@ -246,7 +245,7 @@
 
 		<div>
 			<div class="mb-2 text-xs text-white/40">
-				Sources in “{obs.selectedScene || obs.currentScene || '—'}” — tap to toggle
+				Sources in "{obs.selectedScene || obs.currentScene || 'N/A'}": tap to toggle
 			</div>
 			<div class="flex flex-col gap-2">
 				{#each obs.sources as src}

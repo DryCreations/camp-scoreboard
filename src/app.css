@@ -25,6 +25,18 @@ body {
 	font-family: 'Oswald', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
+* {
+	box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+canvas {
+	max-width: 100%;
+	height: auto;
+}
+
 /* --- Scoreboard type --- */
 .font-score {
 	font-family: 'Anton', 'Oswald', sans-serif;
@@ -122,6 +134,8 @@ body {
 	border: 1px solid var(--chrome-line);
 	border-radius: 1rem;
 	padding: 0.9rem;
+	max-width: 100%;
+	overflow: hidden;
 }
 .ctl-h {
 	font-family: 'Oswald', sans-serif;
@@ -146,6 +160,9 @@ body {
 	user-select: none;
 	-webkit-tap-highlight-color: transparent;
 	transition: transform 90ms ease, filter 90ms ease, box-shadow 90ms ease, background 90ms ease;
+	max-width: 100%;
+	white-space: normal;
+	line-height: 1.1;
 }
 @media (hover: hover) {
 	.ctl-btn:hover { filter: brightness(1.12); }
@@ -174,6 +191,8 @@ body {
 	padding: 0.6rem 0.7rem;
 	color: #fff;
 	font-family: 'Oswald', sans-serif;
+	max-width: 100%;
+	min-width: 0;
 }
 
 /* Respect reduced-motion everywhere: keep feedback but drop the movement. */

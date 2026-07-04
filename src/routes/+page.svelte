@@ -9,7 +9,7 @@
 	<h1 class="mb-2 text-2xl font-black">Camp Scoreboard</h1>
 	<p class="mb-6 text-white/60">
 		Open the <a href="/control" class="text-indigo-400 underline">control panel</a> to run the game.
-		Displays are listed below — add them as OBS Browser Sources or pop them out.
+		Displays are listed below, add them as OBS Browser Sources or pop them out.
 	</p>
 
 	{#if store.state}

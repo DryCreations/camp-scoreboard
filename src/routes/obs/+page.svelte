@@ -9,7 +9,7 @@
 	connect();
 </script>
 
-<svelte:head><title>OBS — Camp Scoreboard</title></svelte:head>
+<svelte:head><title>OBS - Camp Scoreboard</title></svelte:head>
 
 <!-- Same audio policy as other operator pages: this device is silent unless
      localAudio is enabled in the soundboard controls. -->

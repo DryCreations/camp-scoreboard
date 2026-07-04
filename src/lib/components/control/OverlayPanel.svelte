@@ -29,7 +29,7 @@
 			class="rounded-full px-3 py-1 text-xs font-semibold"
 			style={active ? 'background:#166534;color:#dcfce7;' : 'background:#232a36;color:#8b95a6;'}
 		>
-			{active ? `On — ${current ?? ''}` : 'Off'}
+			{active ? `On: ${current ?? ''}` : 'Off'}
 		</span>
 	</div>
 

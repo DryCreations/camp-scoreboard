@@ -21,10 +21,11 @@
 
 	let shotClockSeconds = $derived(msToSeconds(remainingMsFrom(gameState.shotClock, currentTime)));
 	let bonus = $derived(Number(gameState.settings?.bonusThreshold) || 0);
+	let logosEnabled = $derived(theme.logoVisibility?.[entry?.id] !== false);
 
-	let hasTeamLogos = $derived(teams[0]?.logo && teams[1]?.logo);
+	let hasTeamLogos = $derived(logosEnabled && teams[0]?.logo && teams[1]?.logo);
 	let centerLogo = $derived(theme.centerLogo);
-	let showCenterLogo = $derived(!hasTeamLogos && centerLogo);
+	let showCenterLogo = $derived(logosEnabled && !hasTeamLogos && centerLogo);
 
 	let teams = $derived([
 		{
@@ -50,18 +51,6 @@
 		const opponent = side === 'home' ? 'away' : 'home';
 		return (gameState.fouls?.[opponent] ?? 0) >= bonus;
 	}
-
-	function scoreSize(score, withCenterLogo) {
-		const digits = String(Math.max(0, Number(score) || 0)).length;
-		if (withCenterLogo) {
-			if (digits >= 3) return '39cqh';
-			if (digits === 2) return '44cqh';
-			return '48cqh';
-		}
-		if (digits >= 3) return '27cqh';
-		if (digits === 2) return '30cqh';
-		return '32cqh';
-	}
 </script>
 
 <DisplayBase {entry} {theme} {trigger} overlay={gameState.overlay} ticker={gameState.ticker}>
@@ -79,7 +68,7 @@
 				<!-- LEFT COLUMN: HOME TEAM -->
 				<div class="flex flex-col items-center justify-center" style="flex:0 0 34%; max-width:34%; gap:{hasTeamLogos ? '1.8cqh' : '1.2cqh'};">
 					<!-- Fixed-height logo space (only if logo exists) -->
-					{#if teams[0]?.logo}
+					{#if logosEnabled && teams[0]?.logo}
 						<div class="flex items-center justify-center" style="height:35cqh; width:35cqh;">
 							<img
 								src={logoSrc(teams[0].logo)}
@@ -94,8 +83,10 @@
 						{teams[0]?.name}
 					</div>
 					
-					<div class="font-score tabular-nums" style="font-size:{scoreSize(teams[0]?.score, showCenterLogo)}; line-height:0.85; color:#f7faff; text-shadow:0 0 1.8cqh #ffffff42, 0 0 4.4cqh {teams[0]?.color}66; margin:2.4cqh 0 2cqh; max-width:100%; text-align:center;">
-						{teams[0]?.score}
+					<div style="height:{showCenterLogo ? '41cqh' : '29cqh'}; width:100%; display:flex; align-items:center; justify-content:center; margin:1.8cqh 0 1.6cqh;">
+						<div class="font-score tabular-nums" style="font-size:{showCenterLogo ? '39cqh' : '27cqh'}; line-height:1; color:#f7faff; text-shadow:0 0 1.8cqh #ffffff42, 0 0 4.4cqh {teams[0]?.color}66; text-align:center; min-width:3ch; display:inline-flex; align-items:center; justify-content:center;">
+							{teams[0]?.score}
+						</div>
 					</div>
 					
 					<div class="font-label" style="font-size:3cqh; color:#d7dfef; letter-spacing:0.1em;">
@@ -163,7 +154,7 @@
 				<!-- RIGHT COLUMN: AWAY TEAM -->
 				<div class="flex flex-col items-center justify-center" style="flex:0 0 34%; max-width:34%; gap:{hasTeamLogos ? '1.8cqh' : '1.2cqh'};">
 					<!-- Fixed-height logo space (only if logo exists) -->
-					{#if teams[1]?.logo}
+					{#if logosEnabled && teams[1]?.logo}
 						<div class="flex items-center justify-center" style="height:35cqh; width:35cqh;">
 							<img
 								src={logoSrc(teams[1].logo)}
@@ -178,8 +169,10 @@
 						{teams[1]?.name}
 					</div>
 					
-					<div class="font-score tabular-nums" style="font-size:{scoreSize(teams[1]?.score, showCenterLogo)}; line-height:0.85; color:#f7faff; text-shadow:0 0 1.8cqh #ffffff42, 0 0 4.4cqh {teams[1]?.color}66; margin:2.4cqh 0 2cqh; max-width:100%; text-align:center;">
-						{teams[1]?.score}
+					<div style="height:{showCenterLogo ? '41cqh' : '29cqh'}; width:100%; display:flex; align-items:center; justify-content:center; margin:1.8cqh 0 1.6cqh;">
+						<div class="font-score tabular-nums" style="font-size:{showCenterLogo ? '39cqh' : '27cqh'}; line-height:1; color:#f7faff; text-shadow:0 0 1.8cqh #ffffff42, 0 0 4.4cqh {teams[1]?.color}66; text-align:center; min-width:3ch; display:inline-flex; align-items:center; justify-content:center;">
+							{teams[1]?.score}
+						</div>
 					</div>
 					
 					<div class="font-label" style="font-size:3cqh; color:#d7dfef; letter-spacing:0.1em;">

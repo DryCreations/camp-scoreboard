@@ -12,7 +12,7 @@
 	connect();
 </script>
 
-<svelte:head><title>Settings — Camp Scoreboard</title></svelte:head>
+<svelte:head><title>Settings - Camp Scoreboard</title></svelte:head>
 
 <!-- Same as /control: silent on this device unless opted in (previews on the
      Sounds card play regardless, since those are explicit taps). -->

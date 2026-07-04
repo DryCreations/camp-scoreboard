@@ -17,7 +17,7 @@
 	connect();
 </script>
 
-<svelte:head><title>Control — Camp Scoreboard</title></svelte:head>
+<svelte:head><title>Control - Camp Scoreboard</title></svelte:head>
 
 <!-- Off by default: the control device stays silent unless the operator opts in
      via the Soundboard toggle. Displays play regardless. -->
