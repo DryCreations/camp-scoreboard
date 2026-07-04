@@ -8,3 +8,7 @@ node_modules
 
 # Uploaded logos (runtime user content)
 /data/uploads
+
+# Machine-local runtime state (do not sync via git)
+/data/config.json
+/uploads

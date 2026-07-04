@@ -1,0 +1,81 @@
+{
+	"settings": {
+		"shotClockDuration": 24,
+		"bonusThreshold": 7
+	},
+	"theme": {
+		"homeColor": "#2563eb",
+		"awayColor": "#dc2626",
+		"gradientStart": "#647b95",
+		"gradientMid": "#34475e",
+		"gradientEnd": "#1d2b36",
+		"gradientMode": "radial",
+		"gradientCenter": "50% 14%",
+		"gradientSize": "118% 92%",
+		"homeName": "HOME",
+		"awayName": "AWAY",
+		"homeLogo": "",
+		"awayLogo": "",
+		"title": "",
+		"subtitle": "",
+		"centerLogo": ""
+	},
+	"displays": [
+		{
+			"id": "main",
+			"label": "Main Scoreboard (4K)",
+			"type": "scoreboard",
+			"targetWidth": 3840,
+			"targetHeight": 2160
+		},
+		{
+			"id": "clock",
+			"label": "Clock Display",
+			"type": "clock",
+			"targetWidth": 1152,
+			"targetHeight": 720
+		},
+		{
+			"id": "score",
+			"label": "Score Display",
+			"type": "score",
+			"targetWidth": 1152,
+			"targetHeight": 720
+		}
+	],
+	"triggers": [
+		{
+			"id": "buzzer",
+			"label": "Buzzer",
+			"animation": "flash-white",
+			"sound": "buzzer.wav",
+			"obs": {
+				"action": "none",
+				"scene": "",
+				"source": ""
+			}
+		},
+		{
+			"id": "shot_clock_violation",
+			"label": "Shot Clock",
+			"animation": "flash-amber",
+			"sound": "buzzer.wav",
+			"obs": {
+				"action": "none",
+				"scene": "",
+				"source": ""
+			}
+		},
+		{
+			"id": "confetti",
+			"label": "Confetti",
+			"animation": "confetti",
+			"sound": "cheer.wav",
+			"obs": {
+				"action": "none",
+				"scene": "",
+				"source": ""
+			}
+		}
+	]
+}

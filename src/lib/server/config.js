@@ -4,10 +4,19 @@ import path from 'node:path';
 // Persisted config lives in data/config.json at the project root. Using
 // path.join (never string concat) keeps this correct on Windows and macOS.
 const CONFIG_PATH = path.join(process.cwd(), 'data', 'config.json');
+const CONFIG_EXAMPLE_PATH = path.join(process.cwd(), 'data', 'config.example.json');
 
 export function loadConfig() {
-	const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
-	return JSON.parse(raw);
+	if (fs.existsSync(CONFIG_PATH)) {
+		const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
+		return JSON.parse(raw);
+	}
+
+	const fallbackRaw = fs.readFileSync(CONFIG_EXAMPLE_PATH, 'utf-8');
+	const fallback = JSON.parse(fallbackRaw);
+	// Seed machine-local config so runtime edits persist without touching git.
+	saveConfig(fallback);
+	return fallback;
 }
 
 // Write to a temp file then rename, so a crash mid-write can't leave a

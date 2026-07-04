@@ -123,7 +123,7 @@
 					</div>
 					
 					<!-- Reserved space for shot clock (prevents layout shift) - uses height not min-height -->
-					<div style="height:18.4cqh; margin-top:1.6cqh; display:flex; align-items:center; justify-content:center;">
+					<div style="height:18.4cqh; margin-top:3.2cqh; display:flex; align-items:center; justify-content:center;">
 						<div class="flex flex-col items-center justify-center" style="gap:0.4cqh; background:rgba(245,158,11,0.12); padding:1.5cqh 3cqw; border:0.35cqh solid #f59e0b; border-radius:2cqh; min-width:18cqw; opacity:{gameState.shotClock.running ? '1' : '0'}; pointer-events:{gameState.shotClock.running ? 'auto' : 'none'}; transition:opacity 0.2s ease;">
 							<div class="font-label" style="font-size:4cqh; color:#f59e0b; letter-spacing:0.15em;">SHOT</div>
 							<!-- Fixed-width digit box so 1- vs 2-digit numbers never resize the badge. -->
