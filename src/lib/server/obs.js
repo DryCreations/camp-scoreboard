@@ -86,49 +86,29 @@ function managedToken(value) {
 		.replace(/^-|-$/g, '');
 }
 
-function autoCropForCover(sourceWidth, sourceHeight, slotWidth, slotHeight) {
+function cropTopLeftToSlot(sourceWidth, sourceHeight, slotWidth, slotHeight) {
 	const srcW = Math.max(1, Number(sourceWidth) || 1);
 	const srcH = Math.max(1, Number(sourceHeight) || 1);
 	const dstW = Math.max(1, Number(slotWidth) || 1);
 	const dstH = Math.max(1, Number(slotHeight) || 1);
-
-	const srcAspect = srcW / srcH;
-	const dstAspect = dstW / dstH;
-
-	let cropLeft = 0;
-	let cropRight = 0;
-	let cropTop = 0;
-	let cropBottom = 0;
-
-	if (Math.abs(srcAspect - dstAspect) < 0.0001) {
-		return { cropLeft, cropRight, cropTop, cropBottom };
-	}
-
-	if (srcAspect > dstAspect) {
-		const visibleWidth = srcH * dstAspect;
-		const totalCrop = Math.max(0, srcW - visibleWidth);
-		cropLeft = Math.floor(totalCrop / 2);
-		cropRight = Math.floor(totalCrop - cropLeft);
-	} else {
-		const visibleHeight = srcW / dstAspect;
-		const totalCrop = Math.max(0, srcH - visibleHeight);
-		cropTop = Math.floor(totalCrop / 2);
-		cropBottom = Math.floor(totalCrop - cropTop);
-	}
-
-	return { cropLeft, cropRight, cropTop, cropBottom };
+	return {
+		cropLeft: 0,
+		cropTop: 0,
+		cropRight: Math.max(0, srcW - dstW),
+		cropBottom: Math.max(0, srcH - dstH)
+	};
 }
 
-export function managedNamesForDisplay(displayId) {
-	const token = managedToken(displayId) || 'display';
+export function managedNamesForDisplay(displayIdOrSlotKey) {
+	const token = managedToken(displayIdOrSlotKey) || 'display';
 	return {
-		subSceneName: `camp-view-${token}`,
+		subSceneName: `camp-screen-${token}`,
 		browserSourceName: `camp-browser-${token}`
 	};
 }
 
-function managedFeedSourceName(displayId, feedKey) {
-	const displayToken = managedToken(displayId) || 'display';
+function managedFeedSourceName(displayIdOrSlotKey, feedKey) {
+	const displayToken = managedToken(displayIdOrSlotKey) || 'display';
 	const feedToken = managedToken(feedKey) || 'feed';
 	return `camp-feed-${displayToken}-${feedToken}`;
 }
@@ -271,13 +251,15 @@ export function setSourcesVisibilityBatch(sceneName, updates = []) {
 export function applyManagedWallLayout(mainSceneName, items = []) {
 	if (!mainSceneName || !Array.isArray(items) || items.length === 0) return Promise.resolve(false);
 	return safeCall(async () => {
+		await ensureScene(mainSceneName);
 		for (const item of items) {
 			if (!item?.displayId || !item?.url) continue;
 			const width = Math.max(16, Math.floor(Number(item.width) || 0));
 			const height = Math.max(16, Math.floor(Number(item.height) || 0));
 			const slotWidth = Math.max(16, Math.floor(Number(item.slotWidth) || width));
 			const slotHeight = Math.max(16, Math.floor(Number(item.slotHeight) || height));
-			const { subSceneName, browserSourceName } = managedNamesForDisplay(item.displayId);
+			const slotKey = managedToken(item.slotKey) || managedToken(item.displayId);
+			const { subSceneName, browserSourceName } = managedNamesForDisplay(slotKey);
 			const feeds = item.feeds && typeof item.feeds === 'object' ? item.feeds : null;
 			const activeFeed = managedToken(item.activeFeed || '');
 
@@ -286,7 +268,7 @@ export function applyManagedWallLayout(mainSceneName, items = []) {
 				const updates = [];
 				for (const [feedKey, feedUrl] of Object.entries(feeds)) {
 					if (!feedUrl) continue;
-					const feedSourceName = managedFeedSourceName(item.displayId, feedKey);
+					const feedSourceName = managedFeedSourceName(slotKey, feedKey);
 					await upsertBrowserSourceRaw({
 						sceneName: subSceneName,
 						sourceName: feedSourceName,
@@ -343,13 +325,15 @@ export function applyManagedWallLayout(mainSceneName, items = []) {
 				});
 			}
 
+			await ensureSceneItem(mainSceneName, subSceneName);
+
 			const mainSceneItemTransform = await getSceneItemTransform(mainSceneName, subSceneName);
 			const sourceFrameWidth =
 				Math.max(1, Math.floor(Number(mainSceneItemTransform.sourceWidth) || 0)) || width;
 			const sourceFrameHeight =
 				Math.max(1, Math.floor(Number(mainSceneItemTransform.sourceHeight) || 0)) || height;
 
-			const autoCrop = autoCropForCover(sourceFrameWidth, sourceFrameHeight, slotWidth, slotHeight);
+			const autoCrop = cropTopLeftToSlot(sourceFrameWidth, sourceFrameHeight, slotWidth, slotHeight);
 			const manualCropLeft = Math.max(0, Math.floor(Number(item.cropLeft) || 0));
 			const manualCropRight = Math.max(0, Math.floor(Number(item.cropRight) || 0));
 			const manualCropTop = Math.max(0, Math.floor(Number(item.cropTop) || 0));

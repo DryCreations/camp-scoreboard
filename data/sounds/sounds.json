@@ -1,5 +1,7 @@
 {
 	"buzzer.wav": "Buzzer",
 	"cheer.wav": "Crowd Cheer",
-	"boo.wav": "Crowd Boo"
+	"boo.wav": "Crowd Boo",
+	"gasp.wav": "Gasp",
+	"kaching.wav": "Kaching"
 }

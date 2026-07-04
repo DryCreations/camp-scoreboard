@@ -50,6 +50,18 @@
 		const opponent = side === 'home' ? 'away' : 'home';
 		return (gameState.fouls?.[opponent] ?? 0) >= bonus;
 	}
+
+	function scoreSize(score, withCenterLogo) {
+		const digits = String(Math.max(0, Number(score) || 0)).length;
+		if (withCenterLogo) {
+			if (digits >= 3) return '39cqh';
+			if (digits === 2) return '44cqh';
+			return '48cqh';
+		}
+		if (digits >= 3) return '27cqh';
+		if (digits === 2) return '30cqh';
+		return '32cqh';
+	}
 </script>
 
 <DisplayBase {entry} {theme} {trigger} overlay={gameState.overlay} ticker={gameState.ticker}>
@@ -62,10 +74,10 @@
 
 		<div class="flex-1 flex w-full flex-col items-center justify-center" style="padding:1cqh 1.5cqw;">
 			<!-- 3-column layout: Left Score | Center Content | Right Score -->
-			<div class="flex w-full items-center justify-center" style="gap:2cqw; flex:1;">
+			<div class="flex w-full items-center justify-center" style="gap:1.5cqw; flex:1;">
 				
 				<!-- LEFT COLUMN: HOME TEAM -->
-				<div class="flex flex-1 flex-col items-center justify-center" style="gap:{hasTeamLogos ? '1.8cqh' : '1.2cqh'};">
+				<div class="flex flex-col items-center justify-center" style="flex:0 0 34%; max-width:34%; gap:{hasTeamLogos ? '1.8cqh' : '1.2cqh'};">
 					<!-- Fixed-height logo space (only if logo exists) -->
 					{#if teams[0]?.logo}
 						<div class="flex items-center justify-center" style="height:35cqh; width:35cqh;">
@@ -82,7 +94,7 @@
 						{teams[0]?.name}
 					</div>
 					
-					<div class="font-score tabular-nums" style="font-size:{showCenterLogo ? '48cqh' : '32cqh'}; line-height:0.85; color:#f7faff; text-shadow:0 0 2.2cqh #ffffff55, 0 0 6cqh {teams[0]?.color}88, 0 0 9cqh {teams[0]?.color}55; margin:3.5cqh 0;">
+					<div class="font-score tabular-nums" style="font-size:{scoreSize(teams[0]?.score, showCenterLogo)}; line-height:0.85; color:#f7faff; text-shadow:0 0 1.8cqh #ffffff42, 0 0 4.4cqh {teams[0]?.color}66; margin:2.4cqh 0 2cqh; max-width:100%; text-align:center;">
 						{teams[0]?.score}
 					</div>
 					
@@ -100,7 +112,7 @@
 				</div>
 
 				<!-- CENTER COLUMN: TOURNAMENT LOGO (if center mode) or TIMER & INFO -->
-				<div class="flex flex-1 flex-col items-center justify-center" style="gap:2cqh;">
+				<div class="flex flex-col items-center justify-center" style="flex:0 0 28%; max-width:28%; gap:2.4cqh; padding-top:3cqh;">
 					{#if showCenterLogo}
 						<!-- Tournament logo at top of center column -->
 						{#if centerLogo}
@@ -108,13 +120,13 @@
 								src={logoSrc(centerLogo)}
 								alt=""
 								class="object-contain"
-								style="height:38cqh; width:38cqh; filter:drop-shadow(0 0 2cqh rgba(8,12,24,0.6));"
+								style="height:31cqh; width:31cqh; margin-top:2.2cqh; filter:drop-shadow(0 0 1.4cqh rgba(8,12,24,0.5));"
 							/>
 						{/if}
 					{/if}
 					
 					<!-- Timer content -->
-					<div class="font-timer tabular-nums" style="font-size:18cqh; line-height:1; color:#f4f6fb;">
+					<div class="font-timer tabular-nums" style="font-size:16.5cqh; line-height:1; color:#f4f6fb; text-align:center;">
 						<Countdown timer={gameState.timer} />
 					</div>
 					
@@ -123,7 +135,7 @@
 					</div>
 					
 					<!-- Reserved space for shot clock (prevents layout shift) - uses height not min-height -->
-					<div style="height:18.4cqh; margin-top:3.2cqh; display:flex; align-items:center; justify-content:center;">
+					<div style="height:18.4cqh; margin-top:4cqh; display:flex; align-items:center; justify-content:center; width:100%;">
 						<div class="flex flex-col items-center justify-center" style="gap:0.4cqh; background:rgba(245,158,11,0.12); padding:1.5cqh 3cqw; border:0.35cqh solid #f59e0b; border-radius:2cqh; min-width:18cqw; opacity:{gameState.shotClock.running ? '1' : '0'}; pointer-events:{gameState.shotClock.running ? 'auto' : 'none'}; transition:opacity 0.2s ease;">
 							<div class="font-label" style="font-size:4cqh; color:#f59e0b; letter-spacing:0.15em;">SHOT</div>
 							<!-- Fixed-width digit box so 1- vs 2-digit numbers never resize the badge. -->
@@ -149,7 +161,7 @@
 				</div>
 
 				<!-- RIGHT COLUMN: AWAY TEAM -->
-				<div class="flex flex-1 flex-col items-center justify-center" style="gap:{hasTeamLogos ? '1.8cqh' : '1.2cqh'};">
+				<div class="flex flex-col items-center justify-center" style="flex:0 0 34%; max-width:34%; gap:{hasTeamLogos ? '1.8cqh' : '1.2cqh'};">
 					<!-- Fixed-height logo space (only if logo exists) -->
 					{#if teams[1]?.logo}
 						<div class="flex items-center justify-center" style="height:35cqh; width:35cqh;">
@@ -166,7 +178,7 @@
 						{teams[1]?.name}
 					</div>
 					
-					<div class="font-score tabular-nums" style="font-size:{showCenterLogo ? '48cqh' : '32cqh'}; line-height:0.85; color:#f7faff; text-shadow:0 0 2.2cqh #ffffff55, 0 0 6cqh {teams[1]?.color}88, 0 0 9cqh {teams[1]?.color}55; margin:3.5cqh 0;">
+					<div class="font-score tabular-nums" style="font-size:{scoreSize(teams[1]?.score, showCenterLogo)}; line-height:0.85; color:#f7faff; text-shadow:0 0 1.8cqh #ffffff42, 0 0 4.4cqh {teams[1]?.color}66; margin:2.4cqh 0 2cqh; max-width:100%; text-align:center;">
 						{teams[1]?.score}
 					</div>
 					
