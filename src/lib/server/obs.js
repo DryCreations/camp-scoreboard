@@ -77,16 +77,35 @@ async function safeCall(fn) {
 	}
 }
 
+function managedToken(value) {
+	return String(value ?? '')
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9_-]+/g, '-')
+		.replace(/-+/g, '-')
+		.replace(/^-|-$/g, '');
+}
+
+export function managedNamesForDisplay(displayId) {
+	const token = managedToken(displayId) || 'display';
+	return {
+		subSceneName: `camp-view-${token}`,
+		browserSourceName: `camp-browser-${token}`
+	};
+}
+
 export function switchScene(sceneName) {
 	if (!sceneName) return Promise.resolve(false);
 	return safeCall(() => obs.call('SetCurrentProgramScene', { sceneName }));
 }
 
+async function toggleSourceRaw(sceneName, sourceName, enabled) {
+	const { sceneItemId } = await obs.call('GetSceneItemId', { sceneName, sourceName });
+	await obs.call('SetSceneItemEnabled', { sceneName, sceneItemId, sceneItemEnabled: enabled });
+}
+
 export function toggleSource(sceneName, sourceName, enabled) {
-	return safeCall(async () => {
-		const { sceneItemId } = await obs.call('GetSceneItemId', { sceneName, sourceName });
-		await obs.call('SetSceneItemEnabled', { sceneName, sceneItemId, sceneItemEnabled: enabled });
-	});
+	return safeCall(() => toggleSourceRaw(sceneName, sourceName, enabled));
 }
 
 async function getSceneItemId(sceneName, sourceName) {
@@ -107,79 +126,148 @@ async function ensureSceneItem(sceneName, sourceName) {
 	}
 }
 
-export function upsertBrowserSource({ sceneName, sourceName, url, width, height }) {
-	if (!sceneName || !sourceName || !url) return Promise.resolve(false);
+async function ensureScene(sceneName) {
+	try {
+		await obs.call('CreateScene', { sceneName });
+	} catch (err) {
+		const msg = String(err?.message ?? '');
+		if (!msg.toLowerCase().includes('already exists')) {
+			throw err;
+		}
+	}
+}
+
+async function upsertBrowserSourceRaw({ sceneName, sourceName, url, width, height }) {
+	if (!sceneName || !sourceName || !url) return;
 	const targetWidth = Math.max(320, Math.floor(Number(width) || 1920));
 	const targetHeight = Math.max(180, Math.floor(Number(height) || 1080));
 
-	return safeCall(async () => {
-		let existingKind = null;
-		try {
-			const info = await obs.call('GetInputSettings', { inputName: sourceName });
-			existingKind = info?.inputKind ?? null;
-		} catch {
-			existingKind = null;
-		}
+	let existingKind = null;
+	try {
+		const info = await obs.call('GetInputSettings', { inputName: sourceName });
+		existingKind = info?.inputKind ?? null;
+	} catch {
+		existingKind = null;
+	}
 
-		const inputSettings = {
-			url,
-			width: targetWidth,
-			height: targetHeight,
-			restart_when_active: true,
-			shutdown: false,
-			reroute_audio: false,
-			css: ''
-		};
+	const inputSettings = {
+		url,
+		width: targetWidth,
+		height: targetHeight,
+		restart_when_active: true,
+		shutdown: false,
+		reroute_audio: false,
+		css: ''
+	};
 
-		if (!existingKind) {
-			await obs.call('CreateInput', {
-				sceneName,
-				inputName: sourceName,
-				inputKind: 'browser_source',
-				inputSettings,
-				sceneItemEnabled: true
-			});
-			return;
-		}
-
-		if (existingKind !== 'browser_source') {
-			throw new Error(`input "${sourceName}" exists but is ${existingKind}`);
-		}
-
-		await obs.call('SetInputSettings', {
+	if (!existingKind) {
+		await obs.call('CreateInput', {
+			sceneName,
 			inputName: sourceName,
+			inputKind: 'browser_source',
 			inputSettings,
-			overlay: true
+			sceneItemEnabled: true
 		});
-		await ensureSceneItem(sceneName, sourceName);
+		return;
+	}
+
+	if (existingKind !== 'browser_source') {
+		throw new Error(`input "${sourceName}" exists but is ${existingKind}`);
+	}
+
+	await obs.call('SetInputSettings', {
+		inputName: sourceName,
+		inputSettings,
+		overlay: true
+	});
+	await ensureSceneItem(sceneName, sourceName);
+}
+
+export function upsertBrowserSource({ sceneName, sourceName, url, width, height }) {
+	return safeCall(() => upsertBrowserSourceRaw({ sceneName, sourceName, url, width, height }));
+}
+
+async function setSourceTransformRaw(sceneName, sourceName, transform) {
+	if (!sceneName || !sourceName || !transform) return;
+	await ensureSceneItem(sceneName, sourceName);
+	const sceneItemId = await getSceneItemId(sceneName, sourceName);
+	await obs.call('SetSceneItemTransform', {
+		sceneName,
+		sceneItemId,
+		sceneItemTransform: transform
 	});
 }
 
 export function setSourceTransform(sceneName, sourceName, transform) {
-	if (!sceneName || !sourceName || !transform) return Promise.resolve(false);
-	return safeCall(async () => {
-		await ensureSceneItem(sceneName, sourceName);
-		const sceneItemId = await getSceneItemId(sceneName, sourceName);
-		await obs.call('SetSceneItemTransform', {
+	return safeCall(() => setSourceTransformRaw(sceneName, sourceName, transform));
+}
+
+async function setSourcesVisibilityBatchRaw(sceneName, updates = []) {
+	if (!sceneName || !Array.isArray(updates) || updates.length === 0) return;
+	for (const update of updates) {
+		if (!update?.source) continue;
+		await ensureSceneItem(sceneName, update.source);
+		const sceneItemId = await getSceneItemId(sceneName, update.source);
+		await obs.call('SetSceneItemEnabled', {
 			sceneName,
 			sceneItemId,
-			sceneItemTransform: transform
+			sceneItemEnabled: !!update.enabled
 		});
-	});
+	}
 }
 
 export function setSourcesVisibilityBatch(sceneName, updates = []) {
-	if (!sceneName || !Array.isArray(updates) || updates.length === 0) return Promise.resolve(false);
+	return safeCall(() => setSourcesVisibilityBatchRaw(sceneName, updates));
+}
+
+export function applyManagedWallLayout(mainSceneName, items = []) {
+	if (!mainSceneName || !Array.isArray(items) || items.length === 0) return Promise.resolve(false);
 	return safeCall(async () => {
-		for (const update of updates) {
-			if (!update?.source) continue;
-			await ensureSceneItem(sceneName, update.source);
-			const sceneItemId = await getSceneItemId(sceneName, update.source);
-			await obs.call('SetSceneItemEnabled', {
-				sceneName,
-				sceneItemId,
-				sceneItemEnabled: !!update.enabled
+		for (const item of items) {
+			if (!item?.displayId || !item?.url) continue;
+			const width = Math.max(16, Math.floor(Number(item.width) || 0));
+			const height = Math.max(16, Math.floor(Number(item.height) || 0));
+			const { subSceneName, browserSourceName } = managedNamesForDisplay(item.displayId);
+
+			await ensureScene(subSceneName);
+			await upsertBrowserSourceRaw({
+				sceneName: subSceneName,
+				sourceName: browserSourceName,
+				url: item.url,
+				width,
+				height
 			});
+
+			// Keep each managed subscene tightly framed to its intended dimensions.
+			await setSourceTransformRaw(subSceneName, browserSourceName, {
+				positionX: 0,
+				positionY: 0,
+				scaleX: 1,
+				scaleY: 1,
+				cropTop: 0,
+				cropBottom: 0,
+				cropLeft: 0,
+				cropRight: 0,
+				boundsType: 'OBS_BOUNDS_STRETCH',
+				boundsWidth: width,
+				boundsHeight: height
+			});
+
+			await setSourceTransformRaw(mainSceneName, subSceneName, {
+				positionX: Number(item.x) || 0,
+				positionY: Number(item.y) || 0,
+				scaleX: Number(item.scaleX) || 1,
+				scaleY: Number(item.scaleY) || 1,
+				cropTop: Math.max(0, Number(item.cropTop) || 0),
+				cropBottom: Math.max(0, Number(item.cropBottom) || 0),
+				cropLeft: Math.max(0, Number(item.cropLeft) || 0),
+				cropRight: Math.max(0, Number(item.cropRight) || 0),
+				boundsType: 'OBS_BOUNDS_STRETCH',
+				boundsWidth: width,
+				boundsHeight: height
+			});
+
+			await toggleSourceRaw(mainSceneName, subSceneName, item.enabled ?? true);
 		}
 	});
 }

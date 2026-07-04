@@ -5,8 +5,8 @@ import {
 	toggleSource,
 	fetchObsState,
 	upsertBrowserSource,
-	setSourceTransform,
-	setSourcesVisibilityBatch
+	setSourcesVisibilityBatch,
+	applyManagedWallLayout
 } from './obs.js';
 
 // Triggers fired automatically when a clock reaches zero.
@@ -178,29 +178,7 @@ export function attachSocket(httpServer) {
 			io.emit('obs:state', await fetchObsState(scene));
 		});
 		socket.on('obs:quickSetupWall', async ({ scene, items = [] }) => {
-			for (const item of items) {
-				if (!item?.source || !item?.url) continue;
-				await upsertBrowserSource({
-					sceneName: scene,
-					sourceName: item.source,
-					url: item.url,
-					width: item.width,
-					height: item.height
-				});
-
-				await setSourceTransform(scene, item.source, {
-					positionX: Number(item.x) || 0,
-					positionY: Number(item.y) || 0,
-					scaleX: Number(item.scaleX) || 1,
-					scaleY: Number(item.scaleY) || 1,
-					cropTop: Math.max(0, Number(item.cropTop) || 0),
-					cropBottom: Math.max(0, Number(item.cropBottom) || 0),
-					cropLeft: Math.max(0, Number(item.cropLeft) || 0),
-					cropRight: Math.max(0, Number(item.cropRight) || 0)
-				});
-
-				await toggleSource(scene, item.source, item.enabled ?? true);
-			}
+			await applyManagedWallLayout(scene, items);
 			io.emit('obs:state', await fetchObsState(scene));
 		});
 	});
