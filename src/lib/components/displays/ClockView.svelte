@@ -27,8 +27,12 @@
 			<div style="flex:1; background:{theme.awayColor};"></div>
 		</div>
 
-		<div class="font-timer tabular-nums" style="font-size:44cqh; line-height:0.85; color:#f4f6fb; margin-top:2cqh;">
-			<Countdown timer={gameState.timer} />
+		<div class="flex flex-col items-center" style="margin-top:2cqh; gap:var(--sb-clock-display-gap);">
+			<div class="font-timer tabular-nums" style="font-size:44cqh; line-height:0.85; color:#ffffff; text-shadow:0 0 calc(3cqh * var(--sb-glow)) rgba(120,170,255,0.5);">
+				<Countdown timer={gameState.timer} />
+			</div>
+			<!-- amber underline accent, matching the main scoreboard clock -->
+			<div style="width:16cqw; height:0.7cqh; margin-top:var(--sb-clock-display-offset); background:#f59e0b; border-radius:0.35cqh; box-shadow:0 0 calc(var(--sb-clock-accent-glow) * 1.2 * var(--sb-glow)) #f59e0b;"></div>
 		</div>
 		<div class="flex items-end" style="margin-top:4cqh; gap:6cqw; min-height:15cqh;">
 			<div class="flex flex-col items-center">

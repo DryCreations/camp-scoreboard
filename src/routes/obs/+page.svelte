@@ -15,7 +15,7 @@
      localAudio is enabled in the soundboard controls. -->
 <SoundPlayer enabled={store.localAudio} />
 
-<div class="mx-auto max-w-xl p-3 pb-20">
+<div class="mx-auto w-full max-w-xl p-3 pb-20 md:max-w-4xl md:px-5">
 	<NavTabs />
 
 	{#if store.state}

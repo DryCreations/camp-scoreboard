@@ -14,6 +14,13 @@
 	--chrome-800: #12151c;
 	--chrome-700: #1b202a;
 	--chrome-line: #2b3340;
+
+	/* Shared timer accent spacing so Scoreboard + Clock displays stay linked. */
+	--sb-clock-accent-gap: 2.9cqh;
+	--sb-clock-accent-offset: 1.9cqh;
+	--sb-clock-accent-glow: 1.15cqh;
+	--sb-clock-display-gap: calc(var(--sb-clock-accent-gap) + 2.2cqh);
+	--sb-clock-display-offset: calc(var(--sb-clock-accent-offset) + 2cqh);
 }
 
 html,
@@ -62,6 +69,39 @@ canvas {
 .led-grid {
 	background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1.4px);
 	background-size: 0.9cqh 0.9cqh;
+}
+
+/* Angular "esports" chip for the BONUS indicator — notched corners (top-left,
+   bottom-right) instead of a rounded pill, to match the LED/broadcast aesthetic. */
+.bonus-chip {
+	font-family: 'Oswald', sans-serif;
+	font-weight: 700;
+	text-transform: uppercase;
+	color: #0a0c10;
+	background: #f59e0b;
+	border-radius: 0.15cqh;
+	clip-path: polygon(
+		0.9cqh 0,
+		100% 0,
+		100% calc(100% - 0.9cqh),
+		calc(100% - 0.9cqh) 100%,
+		0 100%,
+		0 0.9cqh
+	);
+	box-shadow: 0 0.3cqh 0.9cqh rgba(0, 0, 0, 0.28);
+}
+
+/* Thin structural divider between scoreboard columns. */
+.sb-divider {
+	width: 0.14cqh;
+	align-self: stretch;
+	background: linear-gradient(
+		180deg,
+		transparent 0%,
+		var(--chrome-line) 12%,
+		var(--chrome-line) 88%,
+		transparent 100%
+	);
 }
 
 /* Chrome panel + crisp divider helpers used across displays. */

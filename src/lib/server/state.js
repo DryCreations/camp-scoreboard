@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { loadConfig, saveConfig } from './config.js';
 import { listSounds } from './sounds.js';
+import { listAssets, renameAsset as renameAssetFile, deleteAsset as deleteAssetFile } from './assets.js';
 
 // The single authoritative state object. Live game values (score, clocks,
 // fouls, overlay) are in-memory only and reset per game. settings/theme/
@@ -19,6 +20,14 @@ const DISPLAY_DEFAULTS = {
 function defaultResolutionForType(type) {
 	return DISPLAY_DEFAULTS[type] ?? { width: 1152, height: 720 };
 }
+
+// Built-in appearance presets. A preset is a named bundle of theme "knob" values
+// (curated, not per-element). Applying one merges its params into the theme.
+const DEFAULT_PRESETS = [
+	{ id: 'broadcast', name: 'Broadcast', params: { glowIntensity: 40, showDividers: true } },
+	{ id: 'minimal', name: 'Minimal', params: { glowIntensity: 12, showDividers: false } },
+	{ id: 'bold', name: 'Bold', params: { glowIntensity: 78, showDividers: true } }
+];
 
 export const state = {
 	score: { home: 0, away: 0 },
@@ -39,10 +48,15 @@ export const state = {
 	possession: { visible: false, direction: 'home' },
 	// Available soundboard sounds, discovered from data/sounds/ at boot.
 	sounds: listSounds(),
+	// Persistent image asset library (logos/backgrounds), reconciled from disk.
+	assets: listAssets(),
 	settings: config.settings,
 	theme: config.theme,
 	displays: config.displays,
-	triggers: config.triggers
+	triggers: config.triggers,
+	// Appearance presets (curated bundles of theme knobs) + the active one.
+	presets: config.presets ?? DEFAULT_PRESETS,
+	activePreset: config.activePreset ?? 'broadcast'
 };
 
 // Shot clock duration comes from settings; seed the shot clock with it on boot.
@@ -53,7 +67,9 @@ function persist() {
 		settings: state.settings,
 		theme: state.theme,
 		displays: state.displays,
-		triggers: state.triggers
+		triggers: state.triggers,
+		presets: state.presets,
+		activePreset: state.activePreset
 	});
 }
 
@@ -203,6 +219,68 @@ export function updateSettings(patch) {
 
 export function updateTheme(patch) {
 	state.theme = { ...state.theme, ...patch };
+	persist();
+}
+
+// --- Asset library (persisted to data/assets.json + files on disk) ---
+
+export function refreshAssets() {
+	state.assets = listAssets();
+}
+
+export function renameAsset(id, name) {
+	renameAssetFile(id, name);
+	state.assets = listAssets();
+}
+
+export function deleteAsset(id) {
+	const removedPath = deleteAssetFile(id);
+	state.assets = listAssets();
+	// Clear any theme reference to the now-deleted image so displays don't 404.
+	if (removedPath) {
+		const patch = {};
+		for (const key of ['homeLogo', 'awayLogo', 'centerLogo', 'backgroundImage']) {
+			if (state.theme[key] === removedPath) patch[key] = '';
+		}
+		if (Object.keys(patch).length) {
+			state.theme = { ...state.theme, ...patch };
+			persist();
+		}
+	}
+}
+
+// --- Team side swap ---
+// Atomically swap Home↔Away: names/colors/logos (persisted theme) plus the live
+// score/fouls and possession direction. One action → every display flips sides.
+export function swapTeams() {
+	const t = state.theme;
+	state.theme = {
+		...t,
+		homeName: t.awayName,
+		awayName: t.homeName,
+		homeColor: t.awayColor,
+		awayColor: t.homeColor,
+		homeLogo: t.awayLogo,
+		awayLogo: t.homeLogo
+	};
+	state.score = { home: state.score.away, away: state.score.home };
+	state.fouls = { home: state.fouls.away, away: state.fouls.home };
+	if (state.possession?.direction) {
+		state.possession = {
+			...state.possession,
+			direction: state.possession.direction === 'home' ? 'away' : 'home'
+		};
+	}
+	persist();
+}
+
+// --- Appearance presets (persisted) ---
+
+export function applyPreset(id) {
+	const preset = state.presets.find((p) => p.id === id);
+	if (!preset) return;
+	state.activePreset = id;
+	state.theme = { ...state.theme, ...preset.params };
 	persist();
 }
 

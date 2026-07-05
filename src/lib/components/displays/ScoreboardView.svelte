@@ -5,10 +5,10 @@
 	import { msToSeconds, remainingMsFrom } from '$lib/time.js';
 	import { serverNow } from '$lib/socketClient.svelte.js';
 
-	// Broadcast-style main scoreboard. Score is the hero (tall condensed Anton
-	// numerals over a faint LED grid); the timer is the centered Oswald readout.
-	// Team colors drive the accents. All sizing uses container-query units so the
-	// layout scales to whatever targetWidth/targetHeight the registry defines.
+	// Broadcast-style main scoreboard. The GAME CLOCK is the focal point (large,
+	// centered, amber-accented); the score is the team hero number. Team colors
+	// drive accents; glows scale with the --sb-glow appearance knob. All sizing
+	// uses container-query units so it scales to any targetWidth/targetHeight.
 	let { entry, state: gameState, trigger } = $props();
 
 	let theme = $derived(gameState.theme);
@@ -22,10 +22,18 @@
 	let shotClockSeconds = $derived(msToSeconds(remainingMsFrom(gameState.shotClock, currentTime)));
 	let bonus = $derived(Number(gameState.settings?.bonusThreshold) || 0);
 	let logosEnabled = $derived(theme.logoVisibility?.[entry?.id] !== false);
+	let showDividers = $derived(theme.showDividers !== false);
 
 	let hasTeamLogos = $derived(logosEnabled && teams[0]?.logo && teams[1]?.logo);
+	let reserveTeamLogoSlot = $derived(logosEnabled && (teams[0]?.logo || teams[1]?.logo));
+	let sideColumnGap = $derived(reserveTeamLogoSlot ? '1.1cqh' : '0.85cqh');
+	let largeScoreMode = $derived(!reserveTeamLogoSlot);
 	let centerLogo = $derived(theme.centerLogo);
-	let showCenterLogo = $derived(logosEnabled && !hasTeamLogos && centerLogo);
+	let showCenterLogo = $derived(logosEnabled && centerLogo);
+	let centerColumnTopPad = $derived(
+		showCenterLogo ? '3.2cqh' : reserveTeamLogoSlot ? '10.4cqh' : '6.2cqh'
+	);
+	let sideLogoTopOffset = $derived(showCenterLogo ? '3.2cqh' : '1.4cqh');
 
 	let teams = $derived([
 		{
@@ -55,138 +63,110 @@
 
 <DisplayBase {entry} {theme} {trigger} overlay={gameState.overlay} ticker={gameState.ticker}>
 	<div class="led-grid flex h-full w-full flex-col items-center justify-center relative">
-		<!-- Top stripe with team colors -->
+		<!-- Top stripe with team colors + a thin structural rule beneath it -->
 		<div style="position:absolute; top:0; left:0; right:0; height:1cqh; display:flex; gap:0; z-index:5;">
 			<div style="flex:1; background:{theme.homeColor};"></div>
 			<div style="flex:1; background:{theme.awayColor};"></div>
 		</div>
+		<div style="position:absolute; top:1cqh; left:0; right:0; height:0.12cqh; background:var(--chrome-line); opacity:0.65; z-index:4;"></div>
 
-		<div class="flex-1 flex w-full flex-col items-center justify-center" style="padding:1cqh 1.5cqw;">
-			<!-- 3-column layout: Left Score | Center Content | Right Score -->
-			<div class="flex w-full items-center justify-center" style="gap:1.5cqw; flex:1;">
-				
-				<!-- LEFT COLUMN: HOME TEAM -->
-				<div class="flex flex-col items-center justify-center" style="flex:0 0 34%; max-width:34%; gap:{hasTeamLogos ? '1.8cqh' : '1.2cqh'};">
-					<!-- Fixed-height logo space (only if logo exists) -->
-					{#if logosEnabled && teams[0]?.logo}
-						<div class="flex items-center justify-center" style="height:35cqh; width:35cqh;">
-							<img
-								src={logoSrc(teams[0].logo)}
-								alt=""
-								class="object-contain"
-								style="height:100%; width:100%; filter:drop-shadow(0 0 1.5cqh rgba(8,12,24,0.6));"
-							/>
-						</div>
-					{/if}
-					
-					<div style="font-size:6cqh; line-height:1; color:#f4f6fb; font-family:'Oswald'; font-weight:700;">
-						{teams[0]?.name}
-					</div>
-					
-					<div style="height:{showCenterLogo ? '41cqh' : '29cqh'}; width:100%; display:flex; align-items:center; justify-content:center; margin:1.8cqh 0 1.6cqh;">
-						<div class="font-score tabular-nums" style="font-size:{showCenterLogo ? '39cqh' : '27cqh'}; line-height:1; color:#f7faff; text-shadow:0 0 1.8cqh #ffffff42, 0 0 4.4cqh {teams[0]?.color}66; text-align:center; min-width:3ch; display:inline-flex; align-items:center; justify-content:center;">
-							{teams[0]?.score}
-						</div>
-					</div>
-					
-					<div class="font-label" style="font-size:3cqh; color:#d7dfef; letter-spacing:0.1em;">
-						FOULS: {teams[0]?.fouls}
-					</div>
+		<div class="flex-1 flex w-full flex-col items-center justify-center" style="padding:1cqh 1.5cqw 9cqh;">
+			<!-- 3-column layout: Home | Center (clock focal) | Away, with dividers -->
+			<div class="flex w-full items-stretch justify-center" style="gap:1.4cqw; flex:1;">
 
-					<div style="height:5.2cqh; display:flex; align-items:center; justify-content:center;">
-						<span
-							class="font-label"
-							style="font-size:2.8cqh; padding:0.35cqh 1.3cqh; color:#0a0c10; background:#f59e0b; border-radius:9999px; opacity:{inBonus(teams[0]?.side) ? '1' : '0'}; transition:opacity 0.2s ease;"
-							>Bonus</span
-						>
-					</div>
-				</div>
-
-				<!-- CENTER COLUMN: TOURNAMENT LOGO (if center mode) or TIMER & INFO -->
-				<div class="flex flex-col items-center justify-center" style="flex:0 0 28%; max-width:28%; gap:2.4cqh; padding-top:3cqh;">
-					{#if showCenterLogo}
-						<!-- Tournament logo at top of center column -->
-						{#if centerLogo}
-							<img
-								src={logoSrc(centerLogo)}
-								alt=""
-								class="object-contain"
-								style="height:31cqh; width:31cqh; margin-top:2.2cqh; filter:drop-shadow(0 0 1.4cqh rgba(8,12,24,0.5));"
-							/>
-						{/if}
-					{/if}
-					
-					<!-- Timer content -->
-					<div class="font-timer tabular-nums" style="font-size:16.5cqh; line-height:1; color:#f4f6fb; text-align:center;">
-						<Countdown timer={gameState.timer} />
-					</div>
-					
-					<div class="font-label" style="font-size:3cqh; color:#d8dfee;">
-						Period {gameState.period}
-					</div>
-					
-					<!-- Reserved space for shot clock (prevents layout shift) - uses height not min-height -->
-					<div style="height:18.4cqh; margin-top:4cqh; display:flex; align-items:center; justify-content:center; width:100%;">
-						<div class="flex flex-col items-center justify-center" style="gap:0.4cqh; background:rgba(245,158,11,0.12); padding:1.5cqh 3cqw; border:0.35cqh solid #f59e0b; border-radius:2cqh; min-width:18cqw; opacity:{gameState.shotClock.running ? '1' : '0'}; pointer-events:{gameState.shotClock.running ? 'auto' : 'none'}; transition:opacity 0.2s ease;">
-							<div class="font-label" style="font-size:4cqh; color:#f59e0b; letter-spacing:0.15em;">SHOT</div>
-							<!-- Fixed-width digit box so 1- vs 2-digit numbers never resize the badge. -->
-							<div class="font-timer tabular-nums" style="font-size:14cqh; line-height:1; color:#f59e0b; text-shadow:0 0 2cqh #f59e0b55, 0 0 6cqh #f59e0b33; text-align:center; display:inline-block; width:11cqw;">
-								{shotClockSeconds}
+				{#each [teams[0]] as t (t.side)}
+					<!-- LEFT COLUMN: HOME TEAM -->
+					<div class="flex flex-col items-center justify-center" style="flex:0 0 34%; max-width:34%; gap:{sideColumnGap};">
+						{#if reserveTeamLogoSlot}
+							<div class="flex items-center justify-center" style="height:25.5cqh; width:25.5cqh; margin-top:{sideLogoTopOffset};">
+								{#if t?.logo}
+									<img src={logoSrc(t.logo)} alt="" class="object-contain" style="height:100%; width:100%; filter:drop-shadow(0 0 calc(1.6cqh * var(--sb-glow)) rgba(8,12,24,0.6));" />
+								{/if}
 							</div>
+						{/if}
+
+						<div style="font-size:6cqh; line-height:1; color:#f4f6fb; font-family:'Oswald'; font-weight:700;">{t?.name}</div>
+
+						<div style="height:{largeScoreMode ? '40cqh' : '28cqh'}; width:100%; display:flex; align-items:center; justify-content:center; margin:1.1cqh 0 0.9cqh;">
+							<div class="font-score tabular-nums" style="font-size:{largeScoreMode ? '39cqh' : '27cqh'}; line-height:1; color:#f7faff; text-shadow:0 0.3cqh 0.4cqh rgba(5,10,18,0.5), 0 0 calc(3.2cqh * var(--sb-glow)) {t?.color}aa; text-align:center; min-width:3ch; display:inline-flex; align-items:center; justify-content:center;">{t?.score}</div>
+						</div>
+
+						<!-- Foul hierarchy: small muted label, prominent number -->
+						<div class="flex flex-col items-center" style="gap:0.1cqh;">
+							<div class="font-label" style="font-size:2.1cqh; color:#8d98ab; letter-spacing:0.18em;">Fouls</div>
+							<div class="font-timer tabular-nums" style="font-size:5cqh; line-height:1; color:#eef2f9;">{t?.fouls}</div>
+						</div>
+
+						<div style="height:4.4cqh; display:flex; align-items:center; justify-content:center;">
+							<span class="bonus-chip" style="font-size:2.4cqh; padding:0.45cqh 1.5cqh; letter-spacing:0.12em; opacity:{inBonus(t?.side) ? '1' : '0'}; transition:opacity 0.2s ease;">Bonus</span>
 						</div>
 					</div>
+				{/each}
 
-					<!-- Reserved space for the possession arrow - uses height not min-height, opacity for visibility -->
-					<div style="height:9cqh; display:flex; align-items:center; justify-content:center; gap:1.2cqw;">
-						<!-- Left arrow (lights up when home has possession) -->
-						<div style="display:flex; align-items:center; justify-content:center; height:100%; aspect-ratio:1; font-size:6.5cqh; color:{gameState.possession?.direction === 'home' ? theme.homeColor : '#4a5568'}; text-shadow:{gameState.possession?.direction === 'home' ? `0 0 2cqh ${theme.homeColor}99` : 'none'}; opacity:{gameState.possession?.visible ? '1' : '0'}; pointer-events:{gameState.possession?.visible ? 'auto' : 'none'}; transition:all 0.3s ease;">
-							◀
-						</div>
-						<!-- POSS label -->
-						<div style="display:flex; align-items:center; justify-content:center; height:100%; font-family:'Oswald'; font-weight:500; font-size:3cqh; letter-spacing:0.2em; color:#c9d3e6; padding:0 0.6cqw; opacity:{gameState.possession?.visible ? '1' : '0'}; pointer-events:{gameState.possession?.visible ? 'auto' : 'none'}; transition:all 0.3s ease;">POSS</div>
-						<!-- Right arrow (lights up when away has possession) -->
-						<div style="display:flex; align-items:center; justify-content:center; height:100%; aspect-ratio:1; font-size:6.5cqh; color:{gameState.possession?.direction === 'away' ? theme.awayColor : '#4a5568'}; text-shadow:{gameState.possession?.direction === 'away' ? `0 0 2cqh ${theme.awayColor}99` : 'none'}; opacity:{gameState.possession?.visible ? '1' : '0'}; pointer-events:{gameState.possession?.visible ? 'auto' : 'none'}; transition:all 0.3s ease;">
-							▶
-						</div>
-					</div>
-				</div>
+				{#if showDividers}<div class="sb-divider"></div>{/if}
 
-				<!-- RIGHT COLUMN: AWAY TEAM -->
-				<div class="flex flex-col items-center justify-center" style="flex:0 0 34%; max-width:34%; gap:{hasTeamLogos ? '1.8cqh' : '1.2cqh'};">
-					<!-- Fixed-height logo space (only if logo exists) -->
-					{#if logosEnabled && teams[1]?.logo}
-						<div class="flex items-center justify-center" style="height:35cqh; width:35cqh;">
-							<img
-								src={logoSrc(teams[1].logo)}
-								alt=""
-								class="object-contain"
-								style="height:100%; width:100%; filter:drop-shadow(0 0 1.5cqh rgba(8,12,24,0.6));"
-							/>
-						</div>
+				<!-- CENTER COLUMN: TOURNAMENT LOGO (if center mode) or CLOCK & INFO -->
+				<div class="flex flex-col items-center justify-center" style="flex:0 0 27%; max-width:27%; gap:1.9cqh; padding-top:{centerColumnTopPad};">
+					{#if showCenterLogo && centerLogo}
+						<img src={logoSrc(centerLogo)} alt="" class="object-contain" style="height:31cqh; width:31cqh; margin-top:9.2cqh; filter:drop-shadow(0 0 calc(2cqh * var(--sb-glow)) rgba(8,12,24,0.56));" />
 					{/if}
-					
-					<div style="font-size:6cqh; line-height:1; color:#f4f6fb; font-family:'Oswald'; font-weight:700;">
-						{teams[1]?.name}
-					</div>
-					
-					<div style="height:{showCenterLogo ? '41cqh' : '29cqh'}; width:100%; display:flex; align-items:center; justify-content:center; margin:1.8cqh 0 1.6cqh;">
-						<div class="font-score tabular-nums" style="font-size:{showCenterLogo ? '39cqh' : '27cqh'}; line-height:1; color:#f7faff; text-shadow:0 0 1.8cqh #ffffff42, 0 0 4.4cqh {teams[1]?.color}66; text-align:center; min-width:3ch; display:inline-flex; align-items:center; justify-content:center;">
-							{teams[1]?.score}
+
+					<!-- Game clock — the focal point -->
+					<div class="flex flex-col items-center" style="gap:var(--sb-clock-accent-gap);">
+						<div class="font-timer tabular-nums" style="font-size:21cqh; line-height:0.9; color:#ffffff; text-align:center; text-shadow:0 0 calc(2.4cqh * var(--sb-glow)) rgba(120,170,255,0.5);">
+							<Countdown timer={gameState.timer} />
 						</div>
-					</div>
-					
-					<div class="font-label" style="font-size:3cqh; color:#d7dfef; letter-spacing:0.1em;">
-						FOULS: {teams[1]?.fouls}
+						<!-- amber underline accent -->
+						<div style="width:10.2cqw; height:0.42cqh; margin-top:var(--sb-clock-accent-offset); background:#f59e0b; border-radius:0.3cqh; box-shadow:0 0 calc(var(--sb-clock-accent-glow) * var(--sb-glow)) #f59e0b;"></div>
 					</div>
 
-					<div style="height:5.2cqh; display:flex; align-items:center; justify-content:center;">
-						<span
-							class="font-label"
-							style="font-size:2.8cqh; padding:0.35cqh 1.3cqh; color:#0a0c10; background:#f59e0b; border-radius:9999px; opacity:{inBonus(teams[1]?.side) ? '1' : '0'}; transition:opacity 0.2s ease;"
-							>Bonus</span
-						>
+					<div class="font-label" style="font-size:3cqh; color:#d8dfee;">Period {gameState.period}</div>
+
+					<!-- Reserved space for shot clock (fixed height → no layout shift) -->
+					<div style="height:16.5cqh; margin-top:2.9cqh; display:flex; align-items:center; justify-content:center; width:100%;">
+						<div class="flex flex-col items-center justify-center" style="gap:0.3cqh; background:rgba(245,158,11,0.1); padding:1.2cqh 3cqw; border:0.28cqh solid #f59e0b; border-radius:0.6cqh; clip-path:polygon(1cqh 0,100% 0,100% calc(100% - 1cqh),calc(100% - 1cqh) 100%,0 100%,0 1cqh); min-width:18cqw; opacity:{gameState.shotClock.running ? '1' : '0'}; pointer-events:{gameState.shotClock.running ? 'auto' : 'none'}; transition:opacity 0.2s ease;">
+							<div class="font-label" style="font-size:3.4cqh; color:#f59e0b; letter-spacing:0.2em;">Shot</div>
+							<div class="font-timer tabular-nums" style="font-size:13cqh; line-height:1; color:#f59e0b; text-shadow:0 0 calc(2.4cqh * var(--sb-glow)) #f59e0b; text-align:center; display:inline-block; width:11cqw;">{shotClockSeconds}</div>
+						</div>
+					</div>
+
+					<!-- Reserved space for possession arrow -->
+					<div style="height:8cqh; display:flex; align-items:center; justify-content:center; gap:1.2cqw;">
+						<div style="display:flex; align-items:center; justify-content:center; height:100%; aspect-ratio:1; font-size:6cqh; color:{gameState.possession?.direction === 'home' ? theme.homeColor : '#4a5568'}; text-shadow:{gameState.possession?.direction === 'home' ? `0 0 calc(2cqh * var(--sb-glow)) ${theme.homeColor}` : 'none'}; opacity:{gameState.possession?.visible ? '1' : '0'}; transition:all 0.3s ease;">◀</div>
+						<div style="display:flex; align-items:center; justify-content:center; height:100%; font-family:'Oswald'; font-weight:500; font-size:2.8cqh; line-height:1; letter-spacing:0.2em; color:#c9d3e6; padding:0 0.6cqw; transform:translateY(0.4cqh); opacity:{gameState.possession?.visible ? '1' : '0'}; transition:all 0.3s ease;">POSS</div>
+						<div style="display:flex; align-items:center; justify-content:center; height:100%; aspect-ratio:1; font-size:6cqh; color:{gameState.possession?.direction === 'away' ? theme.awayColor : '#4a5568'}; text-shadow:{gameState.possession?.direction === 'away' ? `0 0 calc(2cqh * var(--sb-glow)) ${theme.awayColor}` : 'none'}; opacity:{gameState.possession?.visible ? '1' : '0'}; transition:all 0.3s ease;">▶</div>
 					</div>
 				</div>
+
+				{#if showDividers}<div class="sb-divider"></div>{/if}
+
+				{#each [teams[1]] as t (t.side)}
+					<!-- RIGHT COLUMN: AWAY TEAM -->
+					<div class="flex flex-col items-center justify-center" style="flex:0 0 34%; max-width:34%; gap:{sideColumnGap};">
+						{#if reserveTeamLogoSlot}
+							<div class="flex items-center justify-center" style="height:25.5cqh; width:25.5cqh; margin-top:{sideLogoTopOffset};">
+								{#if t?.logo}
+									<img src={logoSrc(t.logo)} alt="" class="object-contain" style="height:100%; width:100%; filter:drop-shadow(0 0 calc(1.6cqh * var(--sb-glow)) rgba(8,12,24,0.6));" />
+								{/if}
+							</div>
+						{/if}
+
+						<div style="font-size:6cqh; line-height:1; color:#f4f6fb; font-family:'Oswald'; font-weight:700;">{t?.name}</div>
+
+						<div style="height:{largeScoreMode ? '40cqh' : '28cqh'}; width:100%; display:flex; align-items:center; justify-content:center; margin:1.1cqh 0 0.9cqh;">
+							<div class="font-score tabular-nums" style="font-size:{largeScoreMode ? '39cqh' : '27cqh'}; line-height:1; color:#f7faff; text-shadow:0 0.3cqh 0.4cqh rgba(5,10,18,0.5), 0 0 calc(3.2cqh * var(--sb-glow)) {t?.color}aa; text-align:center; min-width:3ch; display:inline-flex; align-items:center; justify-content:center;">{t?.score}</div>
+						</div>
+
+						<div class="flex flex-col items-center" style="gap:0.1cqh;">
+							<div class="font-label" style="font-size:2.1cqh; color:#8d98ab; letter-spacing:0.18em;">Fouls</div>
+							<div class="font-timer tabular-nums" style="font-size:5cqh; line-height:1; color:#eef2f9;">{t?.fouls}</div>
+						</div>
+
+						<div style="height:4.4cqh; display:flex; align-items:center; justify-content:center;">
+							<span class="bonus-chip" style="font-size:2.4cqh; padding:0.45cqh 1.5cqh; letter-spacing:0.12em; opacity:{inBonus(t?.side) ? '1' : '0'}; transition:opacity 0.2s ease;">Bonus</span>
+						</div>
+					</div>
+				{/each}
 
 			</div>
 		</div>

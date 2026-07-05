@@ -6,6 +6,8 @@
 	//
 	// Sound is handled globally by <SoundPlayer> (real audio files), not here —
 	// this component only owns the visual animation layers, overlay, and ticker.
+	import { logoSrc } from '$lib/logo.js';
+
 	let { entry, theme, trigger, overlay, ticker, children } = $props();
 
 	// Play the animation layer for a fixed duration whenever a trigger fires,
@@ -45,7 +47,17 @@
 		color: confettiColors[i % confettiColors.length]
 	}));
 
+	// Curated appearance knob: 0–100 glow intensity → a 0–1 multiplier exposed as
+	// the CSS var --sb-glow. Display components scale their glow blur radii by it,
+	// so presets/knobs restyle the look with no code changes.
+	let glow = $derived(Math.max(0, Math.min(100, Number(theme?.glowIntensity ?? 40))) / 100);
+
 	let backgroundFill = $derived.by(() => {
+		// A background image (from the asset library) takes over, with a dark scrim
+		// layered on top so foreground numerals stay readable.
+		if (theme?.backgroundImage) {
+			return `linear-gradient(rgba(6,9,15,0.5), rgba(6,9,15,0.72)), url("${logoSrc(theme.backgroundImage)}") center/cover no-repeat`;
+		}
 		const start = theme?.gradientStart || '#4f7fcc';
 		const mid = theme?.gradientMid || '';
 		const end = theme?.gradientEnd || '#213f74';
@@ -65,7 +77,7 @@
 
 <div
 	class="chrome-panel relative overflow-hidden text-white"
-	style="width:{entry.targetWidth}px; height:{entry.targetHeight}px; container-type:size; background:{backgroundFill};"
+	style="width:{entry.targetWidth}px; height:{entry.targetHeight}px; container-type:size; background:{backgroundFill}; --sb-glow:{glow};"
 >
 	{@render children()}
 

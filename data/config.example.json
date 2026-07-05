@@ -18,8 +18,16 @@
 		"awayLogo": "",
 		"title": "",
 		"subtitle": "",
-		"centerLogo": ""
+		"centerLogo": "",
+		"glowIntensity": 40,
+		"showDividers": true
 	},
+	"activePreset": "broadcast",
+	"presets": [
+		{ "id": "broadcast", "name": "Broadcast", "params": { "glowIntensity": 40, "showDividers": true } },
+		{ "id": "minimal", "name": "Minimal", "params": { "glowIntensity": 12, "showDividers": false } },
+		{ "id": "bold", "name": "Bold", "params": { "glowIntensity": 78, "showDividers": true } }
+	],
 	"displays": [
 		{
 			"id": "main",

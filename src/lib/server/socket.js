@@ -106,6 +106,28 @@ export function attachSocket(httpServer) {
 			S.updateTheme(patch);
 			broadcast();
 		});
+		socket.on('preset:apply', ({ id }) => {
+			S.applyPreset(id);
+			broadcast();
+		});
+		socket.on('team:swap', () => {
+			S.swapTeams();
+			broadcast();
+		});
+
+		// --- Asset library ---
+		socket.on('assets:refresh', () => {
+			S.refreshAssets();
+			broadcast();
+		});
+		socket.on('asset:rename', ({ id, name }) => {
+			S.renameAsset(id, name);
+			broadcast();
+		});
+		socket.on('asset:delete', ({ id }) => {
+			S.deleteAsset(id);
+			broadcast();
+		});
 
 		// --- Display registry (persisted) ---
 		socket.on('display:add', (entry) => {
@@ -198,10 +220,13 @@ function snapshot() {
 		ticker: S.state.ticker,
 		possession: S.state.possession,
 		sounds: S.state.sounds,
+		assets: S.state.assets,
 		settings: S.state.settings,
 		theme: S.state.theme,
 		displays: S.state.displays,
-		triggers: S.state.triggers
+		triggers: S.state.triggers,
+		presets: S.state.presets,
+		activePreset: S.state.activePreset
 	};
 }
 
