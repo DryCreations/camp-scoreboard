@@ -19,7 +19,7 @@
 	let shotClockSeconds = $derived(msToSeconds(remainingMsFrom(gameState.shotClock, currentTimeMs)));
 </script>
 
-<DisplayBase {entry} {theme} {trigger} overlay={gameState.overlay} ticker={gameState.ticker}>
+<DisplayBase {entry} {theme} {trigger} overlay={gameState.overlay} ticker={gameState.ticker} overlayPlacement="center">
 	<div class="led-grid flex h-full w-full flex-col items-center justify-center relative">
 		<!-- Top stripe with team colors (home on left, away on right) -->
 		<div style="position:absolute; top:0; left:0; right:0; height:1cqh; display:flex; gap:0; z-index:5;">

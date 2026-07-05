@@ -19,7 +19,7 @@
 	const sharedScoreSize = '43cqh';
 </script>
 
-<DisplayBase {entry} {theme} {trigger} overlay={gameState.overlay} ticker={gameState.ticker}>
+<DisplayBase {entry} {theme} {trigger} overlay={gameState.overlay} ticker={gameState.ticker} overlayPlacement="center">
 	<div class="led-grid flex h-full w-full flex-row items-center justify-center relative" style="padding:1.6cqh 1.4cqw 1cqh; gap:0.8cqw;">
 		<!-- Full-width top stripe: same split home/away bar used by other views -->
 		<div style="position:absolute; top:0; left:0; right:0; height:1cqh; display:flex; gap:0; z-index:5;">

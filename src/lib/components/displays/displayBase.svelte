@@ -8,7 +8,7 @@
 	// this component only owns the visual animation layers, overlay, and ticker.
 	import { logoSrc } from '$lib/logo.js';
 
-	let { entry, theme, trigger, overlay, ticker, children } = $props();
+	let { entry, theme, trigger, overlay, ticker, overlayPlacement = 'top', children } = $props();
 
 	// Play the animation layer for a fixed duration whenever a trigger fires,
 	// then auto-clear. A falsy animation just never flashes — a graceful no-op.
@@ -73,6 +73,35 @@
 			? `radial-gradient(${size} at ${center}, ${start} 0%, ${mid} 52%, ${end} 100%)`
 			: `radial-gradient(${size} at ${center}, ${start} 0%, ${end} 100%)`;
 	});
+
+	let overlayWrapStyle = $derived.by(() => {
+		if (overlayPlacement === 'center') {
+			return 'top:50%; transform:translateY(-50%); background:linear-gradient(180deg, rgba(6,8,12,0.92) 0%, rgba(6,8,12,0.66) 100%); padding:1.9cqh 0; z-index:50;';
+		}
+		if (overlayPlacement === 'lower') {
+			return 'top:70cqh; background:linear-gradient(180deg, rgba(6,8,12,0.9) 0%, rgba(6,8,12,0.64) 100%); padding:1.35cqh 0; z-index:50;';
+		}
+		return 'top:8cqh; background:linear-gradient(180deg, rgba(6,8,12,0.95) 0%, rgba(6,8,12,0.7) 100%); padding:2cqh 0; z-index:50;';
+	});
+
+	let overlayLabelStyle = $derived.by(() => {
+		if (overlayPlacement === 'center') {
+			return 'font-size:7.2cqh; letter-spacing:0.11em; color:#f4f6fb;';
+		}
+		return overlayPlacement === 'lower'
+			? 'font-size:5.8cqh; letter-spacing:0.11em; color:#f4f6fb;'
+			: 'font-size:8cqh; letter-spacing:0.12em; color:#f4f6fb;';
+	});
+
+	let overlayInnerStyle = $derived.by(() => {
+		if (overlayPlacement === 'center') {
+			return `padding:2.1cqh 5.6cqw; border-top:0.36cqh solid ${theme?.homeColor ?? '#2563eb'}; border-bottom:0.36cqh solid ${theme?.awayColor ?? '#dc2626'};`;
+		}
+		if (overlayPlacement === 'lower') {
+			return `padding:1.45cqh 4.9cqw; border-top:0.35cqh solid ${theme?.homeColor ?? '#2563eb'}; border-bottom:0.35cqh solid ${theme?.awayColor ?? '#dc2626'};`;
+		}
+		return `padding:2cqh 6cqw; border-top:0.4cqh solid ${theme?.homeColor ?? '#2563eb'}; border-bottom:0.4cqh solid ${theme?.awayColor ?? '#dc2626'};`;
+	});
 </script>
 
 <div
@@ -100,13 +129,13 @@
 	{#if overlay?.active}
 		<div
 			class="pointer-events-none absolute left-0 right-0 flex items-center justify-center"
-			style="top:8cqh; background:linear-gradient(180deg, rgba(6,8,12,0.95) 0%, rgba(6,8,12,0.7) 100%); padding:2cqh 0; z-index:50;"
+			style={overlayWrapStyle}
 		>
 			<div
 				class="flex items-center justify-center text-center"
-				style="padding:2cqh 6cqw; border-top:0.4cqh solid {theme?.homeColor ?? '#2563eb'}; border-bottom:0.4cqh solid {theme?.awayColor ?? '#dc2626'};"
+				style={overlayInnerStyle}
 			>
-				<span class="font-label" style="font-size:8cqh; letter-spacing:0.12em; color:#f4f6fb;">
+				<span class="font-label" style={overlayLabelStyle}>
 					{overlay.label || ''}
 				</span>
 			</div>
