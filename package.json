@@ -7,7 +7,8 @@
     "dev": "vite dev",
     "build": "vite build",
     "start": "node server.js",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "launch": "node scripts/launch.mjs"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.2.0",

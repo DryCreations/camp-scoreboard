@@ -10,6 +10,59 @@ Built with SvelteKit + Socket.io + Tailwind. Fonts (Anton, Oswald) are bundled l
 the whole thing works with **no internet connection**. Cross-platform: developed on
 Windows, deployed on macOS. No database — config is a single JSON file.
 
+## Quick start: one double-click (Windows or Mac)
+
+Put one launcher file on the Desktop. Double-clicking it:
+
+1. Downloads the app the first time (to `~/CampScoreboard`, or `%USERPROFILE%\CampScoreboard`
+   on Windows), plus a private copy of Node.js if the computer doesn't have Node 20+.
+2. Pulls the latest code from GitHub. If there's no internet, it keeps going with the copy
+   it already has.
+3. Installs dependencies and rebuilds, but only when something changed.
+4. Turns on OBS's WebSocket server, gives it a password, and writes the same settings into
+   `.env` so the app connects to OBS by itself. Then it starts OBS.
+5. Starts the scoreboard, opens `/control` in the browser, and prints the address to use
+   on phones and iPads. If the server crashes, it restarts it.
+
+Keep the window open while you use the scoreboard. Close it (or press Ctrl+C) to stop.
+
+**Install the launcher on the Desktop** (one time):
+
+- **Windows:** open PowerShell and paste:
+  ```
+  iwr https://raw.githubusercontent.com/DryCreations/camp-scoreboard/main/launchers/CampScoreboard.bat -OutFile "$([Environment]::GetFolderPath('Desktop'))\CampScoreboard.bat"
+  ```
+- **Mac:** open Terminal and paste:
+  ```
+  curl -fsSL https://raw.githubusercontent.com/DryCreations/camp-scoreboard/main/launchers/CampScoreboard.command -o ~/Desktop/CampScoreboard.command && chmod +x ~/Desktop/CampScoreboard.command
+  ```
+
+Installing from the command line avoids the "downloaded from the internet" blocks. If you
+download the file with a browser instead, Windows may show "Windows protected your PC"
+(click **More info → Run anyway**). On a Mac, run `chmod +x` on the file, then right-click
+it and choose **Open** the first time.
+
+If you already have a copy of the repo, you can double-click `launchers/CampScoreboard.bat`
+or `launchers/CampScoreboard.command` inside it, or run `npm run launch`.
+
+Notes:
+
+- Install [OBS Studio](https://obsproject.com) 28 or newer first. On Windows you can run
+  `winget install -e --id OBSProject.OBSStudio`. Without OBS, everything except OBS
+  control still works.
+- OBS only reads its WebSocket settings when it starts. If OBS is already open with the
+  WebSocket server turned off, close OBS and run the launcher again.
+- After OBS connects, press **OBS Control → Create / Repair Managed Slot Scenes** on `/control` once to add the
+  display browser sources to OBS. OBS saves them in its own scene collection.
+- Options: `--no-update`, `--no-obs`, `--no-browser`. Environment variables:
+  `CAMP_BRANCH` (default `main`), `CAMP_HOME` (install folder), and `CAMP_OBS_PATH` (OBS
+  in an unusual location).
+- With git installed, updates use `git pull`. Local edits to tracked data files, such as
+  `data/assets.json`, are kept. Without git, the launcher downloads the code again and
+  leaves files that already exist in `data/` untouched.
+
+The sections below describe the manual setup the launcher does for you.
+
 ## Requirements
 
 - [Node.js](https://nodejs.org) 20+ (LTS recommended). After installing, verify:

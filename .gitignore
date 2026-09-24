@@ -12,3 +12,6 @@ node_modules
 # Machine-local runtime state (do not sync via git)
 /data/config.json
 /uploads
+
+# One-click launcher bookkeeping (scripts/launch.mjs)
+/.launcher-state.json

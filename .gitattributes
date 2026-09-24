@@ -1,0 +1,5 @@
+# Windows batch files must keep CRLF, including when downloaded raw from GitHub,
+# so they're stored as-is rather than normalized.
+*.bat -text
+*.command text eol=lf
+*.mjs text eol=lf
