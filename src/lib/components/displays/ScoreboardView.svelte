@@ -26,14 +26,14 @@
 
 	let hasTeamLogos = $derived(logosEnabled && teams[0]?.logo && teams[1]?.logo);
 	let reserveTeamLogoSlot = $derived(logosEnabled && (teams[0]?.logo || teams[1]?.logo));
-	let sideColumnGap = $derived(reserveTeamLogoSlot ? '1.1cqh' : '0.85cqh');
+	let sideColumnGap = $derived(reserveTeamLogoSlot ? 'calc(1.1 * var(--u))' : 'calc(0.85 * var(--u))');
 	let largeScoreMode = $derived(!reserveTeamLogoSlot);
 	let centerLogo = $derived(theme.centerLogo);
 	let showCenterLogo = $derived(logosEnabled && centerLogo);
 	let centerColumnTopPad = $derived(
-		showCenterLogo ? '3.2cqh' : reserveTeamLogoSlot ? '10.4cqh' : '6.2cqh'
+		showCenterLogo ? 'calc(3.2 * var(--u))' : reserveTeamLogoSlot ? 'calc(10.4 * var(--u))' : 'calc(6.2 * var(--u))'
 	);
-	let sideLogoTopOffset = $derived(showCenterLogo ? '3.2cqh' : '1.4cqh');
+	let sideLogoTopOffset = $derived(showCenterLogo ? 'calc(3.2 * var(--u))' : 'calc(1.4 * var(--u))');
 
 	let teams = $derived([
 		{
@@ -62,15 +62,17 @@
 </script>
 
 <DisplayBase {entry} {theme} {trigger} overlay={gameState.overlay} ticker={gameState.ticker} overlayPlacement="lower">
-	<div class="led-grid flex h-full w-full flex-col items-center justify-center relative">
+	<!-- --u: layout unit. Tracks height, but never grows beyond what a 16:9 screen
+	     would allow, so narrower screens (4:3, 16:10) shrink instead of overlapping. -->
+	<div class="led-grid flex h-full w-full flex-col items-center justify-center relative" style="--u:min(1cqh, 0.5625cqw);">
 		<!-- Top stripe with team colors + a thin structural rule beneath it -->
-		<div style="position:absolute; top:0; left:0; right:0; height:1cqh; display:flex; gap:0; z-index:5;">
+		<div style="position:absolute; top:0; left:0; right:0; height:calc(1 * var(--u)); display:flex; gap:0; z-index:5;">
 			<div style="flex:1; background:{theme.homeColor};"></div>
 			<div style="flex:1; background:{theme.awayColor};"></div>
 		</div>
-		<div style="position:absolute; top:1cqh; left:0; right:0; height:0.12cqh; background:var(--chrome-line); opacity:0.65; z-index:4;"></div>
+		<div style="position:absolute; top:calc(1 * var(--u)); left:0; right:0; height:calc(0.12 * var(--u)); background:var(--chrome-line); opacity:0.65; z-index:4;"></div>
 
-		<div class="flex-1 flex w-full flex-col items-center justify-center" style="padding:1cqh 1.5cqw 13cqh;">
+		<div class="flex-1 flex w-full flex-col items-center justify-center" style="padding:calc(1 * var(--u)) 1.5cqw calc(13 * var(--u));">
 			<!-- 3-column layout: Home | Center (clock focal) | Away, with dividers -->
 			<div class="flex w-full items-stretch justify-center" style="gap:1.4cqw; flex:1;">
 
@@ -78,27 +80,27 @@
 					<!-- LEFT COLUMN: HOME TEAM -->
 					<div class="flex flex-col items-center justify-center" style="flex:0 0 34%; max-width:34%; gap:{sideColumnGap};">
 						{#if reserveTeamLogoSlot}
-							<div class="flex items-center justify-center" style="height:25.5cqh; width:25.5cqh; margin-top:{sideLogoTopOffset};">
+							<div class="flex items-center justify-center" style="height:calc(25.5 * var(--u)); width:calc(25.5 * var(--u)); margin-top:{sideLogoTopOffset};">
 								{#if t?.logo}
-									<img src={logoSrc(t.logo)} alt="" class="object-contain" style="height:100%; width:100%; filter:drop-shadow(0 0 calc(1.6cqh * var(--sb-glow)) rgba(8,12,24,0.6));" />
+									<img src={logoSrc(t.logo)} alt="" class="object-contain" style="height:100%; width:100%; filter:drop-shadow(0 0 calc(calc(1.6 * var(--u)) * var(--sb-glow)) rgba(8,12,24,0.6));" />
 								{/if}
 							</div>
 						{/if}
 
-						<div style="font-size:6cqh; line-height:1; color:#f4f6fb; font-family:'Oswald'; font-weight:700;">{t?.name}</div>
+						<div style="font-size:calc(6 * var(--u)); line-height:1; color:#f4f6fb; font-family:'Oswald'; font-weight:700;">{t?.name}</div>
 
-						<div style="height:{largeScoreMode ? '34cqh' : '28cqh'}; width:100%; display:flex; align-items:center; justify-content:center; margin:0.9cqh 0 0.7cqh;">
-							<div class="font-score tabular-nums" style="font-size:{largeScoreMode ? '34cqh' : '27cqh'}; line-height:1; color:#f7faff; text-shadow:0 0.3cqh 0.4cqh rgba(5,10,18,0.5), 0 0 calc(3.2cqh * var(--sb-glow)) {t?.color}aa; text-align:center; min-width:3ch; display:inline-flex; align-items:center; justify-content:center;">{t?.score}</div>
+						<div style="height:{largeScoreMode ? 'calc(34 * var(--u))' : 'calc(28 * var(--u))'}; width:100%; display:flex; align-items:center; justify-content:center; margin:calc(0.9 * var(--u)) 0 calc(0.7 * var(--u));">
+							<div class="font-score tabular-nums" style="font-size:{largeScoreMode ? 'calc(34 * var(--u))' : 'calc(27 * var(--u))'}; line-height:1; color:#f7faff; text-shadow:0 calc(0.3 * var(--u)) calc(0.4 * var(--u)) rgba(5,10,18,0.5), 0 0 calc(calc(3.2 * var(--u)) * var(--sb-glow)) {t?.color}aa; text-align:center; min-width:3ch; display:inline-flex; align-items:center; justify-content:center;">{t?.score}</div>
 						</div>
 
 						<!-- Foul hierarchy: small muted label, prominent number -->
-						<div class="flex flex-col items-center" style="gap:0.1cqh;">
-							<div class="font-label" style="font-size:2.1cqh; color:#8d98ab; letter-spacing:0.18em;">Fouls</div>
-							<div class="font-timer tabular-nums" style="font-size:5cqh; line-height:1; color:#eef2f9;">{t?.fouls}</div>
+						<div class="flex flex-col items-center" style="gap:calc(0.1 * var(--u));">
+							<div class="font-label" style="font-size:calc(2.1 * var(--u)); color:#8d98ab; letter-spacing:0.18em;">Fouls</div>
+							<div class="font-timer tabular-nums" style="font-size:calc(5 * var(--u)); line-height:1; color:#eef2f9;">{t?.fouls}</div>
 						</div>
 
-						<div style="height:4.4cqh; display:flex; align-items:center; justify-content:center;">
-							<span class="bonus-chip" style="font-size:2.4cqh; padding:0.45cqh 1.5cqh; letter-spacing:0.12em; opacity:{inBonus(t?.side) ? '1' : '0'}; transition:opacity 0.2s ease;">Bonus</span>
+						<div style="height:calc(4.4 * var(--u)); display:flex; align-items:center; justify-content:center;">
+							<span class="bonus-chip" style="font-size:calc(2.4 * var(--u)); padding:calc(0.45 * var(--u)) calc(1.5 * var(--u)); letter-spacing:0.12em; opacity:{inBonus(t?.side) ? '1' : '0'}; transition:opacity 0.2s ease;">Bonus</span>
 						</div>
 					</div>
 				{/each}
@@ -106,35 +108,35 @@
 				{#if showDividers}<div class="sb-divider"></div>{/if}
 
 				<!-- CENTER COLUMN: TOURNAMENT LOGO (if center mode) or CLOCK & INFO -->
-				<div class="flex flex-col items-center justify-center" style="flex:0 0 27%; max-width:27%; gap:1.25cqh; padding-top:{centerColumnTopPad};">
+				<div class="flex flex-col items-center justify-center" style="flex:0 0 27%; max-width:27%; gap:calc(1.25 * var(--u)); padding-top:{centerColumnTopPad};">
 					{#if showCenterLogo && centerLogo}
-						<img src={logoSrc(centerLogo)} alt="" class="object-contain" style="height:31cqh; width:31cqh; margin-top:9.2cqh; filter:drop-shadow(0 0 calc(2cqh * var(--sb-glow)) rgba(8,12,24,0.56));" />
+						<img src={logoSrc(centerLogo)} alt="" class="object-contain" style="height:calc(31 * var(--u)); width:calc(31 * var(--u)); margin-top:calc(9.2 * var(--u)); filter:drop-shadow(0 0 calc(calc(2 * var(--u)) * var(--sb-glow)) rgba(8,12,24,0.56));" />
 					{/if}
 
 					<!-- Game clock — the focal point -->
-					<div class="flex flex-col items-center" style="gap:1.9cqh;">
-						<div class="font-timer tabular-nums" style="font-size:18.8cqh; line-height:0.9; color:#ffffff; text-align:center; text-shadow:0 0 calc(2.2cqh * var(--sb-glow)) rgba(120,170,255,0.5);">
+					<div class="flex flex-col items-center" style="gap:calc(1.9 * var(--u));">
+						<div class="font-timer tabular-nums" style="font-size:calc(18.8 * var(--u)); line-height:0.9; color:#ffffff; text-align:center; text-shadow:0 0 calc(calc(2.2 * var(--u)) * var(--sb-glow)) rgba(120,170,255,0.5);">
 							<Countdown timer={gameState.timer} />
 						</div>
 						<!-- amber underline accent -->
-						<div style="width:10cqw; height:0.4cqh; margin-top:1.2cqh; background:#f59e0b; border-radius:0.3cqh; box-shadow:0 0 calc(1.05cqh * var(--sb-glow)) #f59e0b;"></div>
+						<div style="width:10cqw; height:calc(0.4 * var(--u)); margin-top:calc(1.2 * var(--u)); background:#f59e0b; border-radius:calc(0.3 * var(--u)); box-shadow:0 0 calc(calc(1.05 * var(--u)) * var(--sb-glow)) #f59e0b;"></div>
 					</div>
 
-					<div class="font-label" style="font-size:2.65cqh; color:#d8dfee;">Period {gameState.period}</div>
+					<div class="font-label" style="font-size:calc(2.65 * var(--u)); color:#d8dfee;">Period {gameState.period}</div>
 
 					<!-- Reserved space for shot clock (fixed height → no layout shift) -->
-					<div style="height:13.2cqh; margin-top:1.6cqh; display:flex; align-items:center; justify-content:center; width:100%;">
-						<div class="flex flex-col items-center justify-center" style="gap:0.3cqh; background:rgba(245,158,11,0.1); padding:1.2cqh 3cqw; border:0.28cqh solid #f59e0b; border-radius:0.6cqh; clip-path:polygon(1cqh 0,100% 0,100% calc(100% - 1cqh),calc(100% - 1cqh) 100%,0 100%,0 1cqh); min-width:18cqw; opacity:{gameState.shotClock.running ? '1' : '0'}; pointer-events:{gameState.shotClock.running ? 'auto' : 'none'}; transition:opacity 0.2s ease;">
-							<div class="font-label" style="font-size:2.6cqh; color:#f59e0b; letter-spacing:0.2em;">Shot</div>
-							<div class="font-timer tabular-nums" style="font-size:10.4cqh; line-height:1; color:#f59e0b; text-shadow:0 0 calc(2cqh * var(--sb-glow)) #f59e0b; text-align:center; display:inline-block; width:9.2cqw;">{shotClockSeconds}</div>
+					<div style="height:calc(13.2 * var(--u)); margin-top:calc(1.6 * var(--u)); display:flex; align-items:center; justify-content:center; width:100%;">
+						<div class="flex flex-col items-center justify-center" style="gap:calc(0.3 * var(--u)); background:rgba(245,158,11,0.1); padding:calc(1.2 * var(--u)) 3cqw; border:calc(0.28 * var(--u)) solid #f59e0b; border-radius:calc(0.6 * var(--u)); clip-path:polygon(calc(1 * var(--u)) 0,100% 0,100% calc(100% - calc(1 * var(--u))),calc(100% - calc(1 * var(--u))) 100%,0 100%,0 calc(1 * var(--u))); min-width:18cqw; opacity:{gameState.shotClock.running ? '1' : '0'}; pointer-events:{gameState.shotClock.running ? 'auto' : 'none'}; transition:opacity 0.2s ease;">
+							<div class="font-label" style="font-size:calc(2.6 * var(--u)); color:#f59e0b; letter-spacing:0.2em;">Shot</div>
+							<div class="font-timer tabular-nums" style="font-size:calc(10.4 * var(--u)); line-height:1; color:#f59e0b; text-shadow:0 0 calc(calc(2 * var(--u)) * var(--sb-glow)) #f59e0b; text-align:center; display:inline-block; width:9.2cqw;">{shotClockSeconds}</div>
 						</div>
 					</div>
 
 					<!-- Reserved space for possession arrow -->
-					<div style="height:6.2cqh; margin-top:0.6cqh; display:flex; align-items:center; justify-content:center; gap:1.05cqw;">
-						<div style="display:flex; align-items:center; justify-content:center; height:100%; aspect-ratio:1; font-size:4.8cqh; color:{gameState.possession?.direction === 'home' ? theme.homeColor : '#4a5568'}; text-shadow:{gameState.possession?.direction === 'home' ? `0 0 calc(1.6cqh * var(--sb-glow)) ${theme.homeColor}` : 'none'}; opacity:{gameState.possession?.visible ? '1' : '0'}; transition:all 0.3s ease;">◀</div>
-						<div style="display:flex; align-items:center; justify-content:center; height:100%; font-family:'Oswald'; font-weight:500; font-size:2.35cqh; line-height:1; letter-spacing:0.2em; color:#c9d3e6; padding:0 0.55cqw; transform:translateY(0.24cqh); opacity:{gameState.possession?.visible ? '1' : '0'}; transition:all 0.3s ease;">POSS</div>
-						<div style="display:flex; align-items:center; justify-content:center; height:100%; aspect-ratio:1; font-size:4.8cqh; color:{gameState.possession?.direction === 'away' ? theme.awayColor : '#4a5568'}; text-shadow:{gameState.possession?.direction === 'away' ? `0 0 calc(1.6cqh * var(--sb-glow)) ${theme.awayColor}` : 'none'}; opacity:{gameState.possession?.visible ? '1' : '0'}; transition:all 0.3s ease;">▶</div>
+					<div style="height:calc(6.2 * var(--u)); margin-top:calc(0.6 * var(--u)); display:flex; align-items:center; justify-content:center; gap:1.05cqw;">
+						<div style="display:flex; align-items:center; justify-content:center; height:100%; aspect-ratio:1; font-size:calc(4.8 * var(--u)); color:{gameState.possession?.direction === 'home' ? theme.homeColor : '#4a5568'}; text-shadow:{gameState.possession?.direction === 'home' ? `0 0 calc(calc(1.6 * var(--u)) * var(--sb-glow)) ${theme.homeColor}` : 'none'}; opacity:{gameState.possession?.visible ? '1' : '0'}; transition:all 0.3s ease;">◀</div>
+						<div style="display:flex; align-items:center; justify-content:center; height:100%; font-family:'Oswald'; font-weight:500; font-size:calc(2.35 * var(--u)); line-height:1; letter-spacing:0.2em; color:#c9d3e6; padding:0 0.55cqw; transform:translateY(calc(0.24 * var(--u))); opacity:{gameState.possession?.visible ? '1' : '0'}; transition:all 0.3s ease;">POSS</div>
+						<div style="display:flex; align-items:center; justify-content:center; height:100%; aspect-ratio:1; font-size:calc(4.8 * var(--u)); color:{gameState.possession?.direction === 'away' ? theme.awayColor : '#4a5568'}; text-shadow:{gameState.possession?.direction === 'away' ? `0 0 calc(calc(1.6 * var(--u)) * var(--sb-glow)) ${theme.awayColor}` : 'none'}; opacity:{gameState.possession?.visible ? '1' : '0'}; transition:all 0.3s ease;">▶</div>
 					</div>
 				</div>
 
@@ -144,26 +146,26 @@
 					<!-- RIGHT COLUMN: AWAY TEAM -->
 					<div class="flex flex-col items-center justify-center" style="flex:0 0 34%; max-width:34%; gap:{sideColumnGap};">
 						{#if reserveTeamLogoSlot}
-							<div class="flex items-center justify-center" style="height:25.5cqh; width:25.5cqh; margin-top:{sideLogoTopOffset};">
+							<div class="flex items-center justify-center" style="height:calc(25.5 * var(--u)); width:calc(25.5 * var(--u)); margin-top:{sideLogoTopOffset};">
 								{#if t?.logo}
-									<img src={logoSrc(t.logo)} alt="" class="object-contain" style="height:100%; width:100%; filter:drop-shadow(0 0 calc(1.6cqh * var(--sb-glow)) rgba(8,12,24,0.6));" />
+									<img src={logoSrc(t.logo)} alt="" class="object-contain" style="height:100%; width:100%; filter:drop-shadow(0 0 calc(calc(1.6 * var(--u)) * var(--sb-glow)) rgba(8,12,24,0.6));" />
 								{/if}
 							</div>
 						{/if}
 
-						<div style="font-size:6cqh; line-height:1; color:#f4f6fb; font-family:'Oswald'; font-weight:700;">{t?.name}</div>
+						<div style="font-size:calc(6 * var(--u)); line-height:1; color:#f4f6fb; font-family:'Oswald'; font-weight:700;">{t?.name}</div>
 
-						<div style="height:{largeScoreMode ? '34cqh' : '28cqh'}; width:100%; display:flex; align-items:center; justify-content:center; margin:0.9cqh 0 0.7cqh;">
-							<div class="font-score tabular-nums" style="font-size:{largeScoreMode ? '34cqh' : '27cqh'}; line-height:1; color:#f7faff; text-shadow:0 0.3cqh 0.4cqh rgba(5,10,18,0.5), 0 0 calc(3.2cqh * var(--sb-glow)) {t?.color}aa; text-align:center; min-width:3ch; display:inline-flex; align-items:center; justify-content:center;">{t?.score}</div>
+						<div style="height:{largeScoreMode ? 'calc(34 * var(--u))' : 'calc(28 * var(--u))'}; width:100%; display:flex; align-items:center; justify-content:center; margin:calc(0.9 * var(--u)) 0 calc(0.7 * var(--u));">
+							<div class="font-score tabular-nums" style="font-size:{largeScoreMode ? 'calc(34 * var(--u))' : 'calc(27 * var(--u))'}; line-height:1; color:#f7faff; text-shadow:0 calc(0.3 * var(--u)) calc(0.4 * var(--u)) rgba(5,10,18,0.5), 0 0 calc(calc(3.2 * var(--u)) * var(--sb-glow)) {t?.color}aa; text-align:center; min-width:3ch; display:inline-flex; align-items:center; justify-content:center;">{t?.score}</div>
 						</div>
 
-						<div class="flex flex-col items-center" style="gap:0.1cqh;">
-							<div class="font-label" style="font-size:2.1cqh; color:#8d98ab; letter-spacing:0.18em;">Fouls</div>
-							<div class="font-timer tabular-nums" style="font-size:5cqh; line-height:1; color:#eef2f9;">{t?.fouls}</div>
+						<div class="flex flex-col items-center" style="gap:calc(0.1 * var(--u));">
+							<div class="font-label" style="font-size:calc(2.1 * var(--u)); color:#8d98ab; letter-spacing:0.18em;">Fouls</div>
+							<div class="font-timer tabular-nums" style="font-size:calc(5 * var(--u)); line-height:1; color:#eef2f9;">{t?.fouls}</div>
 						</div>
 
-						<div style="height:4.4cqh; display:flex; align-items:center; justify-content:center;">
-							<span class="bonus-chip" style="font-size:2.4cqh; padding:0.45cqh 1.5cqh; letter-spacing:0.12em; opacity:{inBonus(t?.side) ? '1' : '0'}; transition:opacity 0.2s ease;">Bonus</span>
+						<div style="height:calc(4.4 * var(--u)); display:flex; align-items:center; justify-content:center;">
+							<span class="bonus-chip" style="font-size:calc(2.4 * var(--u)); padding:calc(0.45 * var(--u)) calc(1.5 * var(--u)); letter-spacing:0.12em; opacity:{inBonus(t?.side) ? '1' : '0'}; transition:opacity 0.2s ease;">Bonus</span>
 						</div>
 					</div>
 				{/each}

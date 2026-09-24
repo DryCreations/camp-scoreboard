@@ -205,8 +205,9 @@
 
 	{#if !obs.connected}
 		<p class="text-sm text-white/50">
-			OBS isn't reachable. Start OBS and enable its WebSocket server (Tools → WebSocket Server
-			Settings), then tap Refresh.
+			OBS isn't reachable. Close OBS and start the Camp Scoreboard launcher again; it sets up the
+			connection for you. Or turn on OBS's WebSocket server yourself (Tools → WebSocket Server
+			Settings), put its password in .env, then tap Refresh.
 		</p>
 	{:else}
 		<div class="mb-3 rounded-xl border p-3" style="border-color:var(--chrome-line);">
