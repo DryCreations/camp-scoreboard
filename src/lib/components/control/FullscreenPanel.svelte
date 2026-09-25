@@ -7,8 +7,11 @@
 	// switches live. The scoreboard keeps running underneath. Upload, background
 	// and size are on /settings -> Full-screen image.
 	let theme = $derived(store.state.theme ?? {});
+	// Newest first. createdAt is a number for new uploads but may be a date
+	// string in older library entries.
+	const toMillis = (v) => (typeof v === 'number' ? v : Date.parse(v) || 0);
 	let assets = $derived(
-		[...(store.state.assets ?? [])].sort((a, b) => Number(b.createdAt) - Number(a.createdAt))
+		[...(store.state.assets ?? [])].sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt))
 	);
 	let on = $derived(!!theme.fullscreenOn);
 	let selected = $derived(theme.fullscreenImage || '');

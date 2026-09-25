@@ -177,6 +177,25 @@
 				{/if}
 			</div>
 		{/if}
+
+		<!-- Manual operator overlay: full-width banner with centered content and top/bottom lines.
+		     Positioned within the area between the top/bottom banners so it never
+		     runs into them; with no banners that area is the whole display. -->
+		{#if overlay?.active}
+			<div
+				class="pointer-events-none absolute left-0 right-0 flex items-center justify-center"
+				style={overlayWrapStyle}
+			>
+				<div
+					class="flex items-center justify-center text-center"
+					style={overlayInnerStyle}
+				>
+					<span class="font-label" style={overlayLabelStyle}>
+						{overlay.label || ''}
+					</span>
+				</div>
+			</div>
+		{/if}
 	</div>
 
 	{#if bottomBanner}<Banner {...bottomBanner} />{/if}
@@ -195,23 +214,6 @@
 
 	<!-- Full-bleed flash overlay (buzzer / shot-clock) -->
 	<div class="pointer-events-none absolute inset-0 {animClass}" style="opacity:0"></div>
-
-	<!-- Manual operator overlay: full-width banner with centered content and top/bottom lines -->
-	{#if overlay?.active}
-		<div
-			class="pointer-events-none absolute left-0 right-0 flex items-center justify-center"
-			style={overlayWrapStyle}
-		>
-			<div
-				class="flex items-center justify-center text-center"
-				style={overlayInnerStyle}
-			>
-				<span class="font-label" style={overlayLabelStyle}>
-					{overlay.label || ''}
-				</span>
-			</div>
-		</div>
-	{/if}
 
 	<!-- Persistent news-style ticker along the bottom -->
 	{#if tickerOn}
