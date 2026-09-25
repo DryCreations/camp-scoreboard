@@ -8,6 +8,7 @@
 	// this component only owns the visual animation layers, overlay, and ticker.
 	import { logoSrc } from '$lib/logo.js';
 	import Banner from './Banner.svelte';
+	import { fade } from 'svelte/transition';
 
 	let { entry, theme, trigger, overlay, ticker, overlayPlacement = 'top', children } = $props();
 
@@ -53,16 +54,8 @@
 	// so presets/knobs restyle the look with no code changes.
 	let glow = $derived(Math.max(0, Math.min(100, Number(theme?.glowIntensity ?? 40))) / 100);
 
-	let backgroundFill = $derived.by(() => {
-		// A background image (from the asset library) takes over, with a dark scrim
-		// layered on top so foreground numerals stay readable.
-		if (theme?.backgroundImage) {
-			return `linear-gradient(rgba(6,9,15,0.5), rgba(6,9,15,0.72)), url("${logoSrc(theme.backgroundImage)}") center/cover no-repeat`;
-		}
-		const start = theme?.gradientStart || '#4f7fcc';
-		const mid = theme?.gradientMid || '';
-		const end = theme?.gradientEnd || '#213f74';
-		const mode = theme?.gradientMode === 'linear' ? 'linear' : 'radial';
+	function gradient({ mode, start, mid, end }) {
+		if (mode === 'solid') return start;
 		if (mode === 'linear') {
 			return mid
 				? `linear-gradient(180deg, ${start} 0%, ${mid} 52%, ${end} 100%)`
@@ -73,6 +66,42 @@
 		return mid
 			? `radial-gradient(${size} at ${center}, ${start} 0%, ${mid} 52%, ${end} 100%)`
 			: `radial-gradient(${size} at ${center}, ${start} 0%, ${end} 100%)`;
+	}
+
+	let scoreboardColors = $derived({
+		mode: theme?.gradientMode === 'linear' ? 'linear' : 'radial',
+		start: theme?.gradientStart || '#4f7fcc',
+		mid: theme?.gradientMid || '',
+		end: theme?.gradientEnd || '#213f74'
+	});
+
+	let backgroundFill = $derived.by(() => {
+		// A background image (from the asset library) takes over, with a dark scrim
+		// layered on top so foreground numerals stay readable.
+		if (theme?.backgroundImage) {
+			return `linear-gradient(rgba(6,9,15,0.5), rgba(6,9,15,0.72)), url("${logoSrc(theme.backgroundImage)}") center/cover no-repeat`;
+		}
+		return gradient(scoreboardColors);
+	});
+
+	// Full-screen image (theme.fullscreen*): covers the view, not the banners or
+	// ticker. Its background has its own colors; any left blank use the
+	// scoreboard's, so by default it matches the board.
+	let fullscreen = $derived.by(() => {
+		if (!theme?.fullscreenOn) return null;
+		const mode = ['radial', 'linear', 'solid'].includes(theme.fullscreenBgMode)
+			? theme.fullscreenBgMode
+			: scoreboardColors.mode;
+		return {
+			image: theme.fullscreenImage ? logoSrc(theme.fullscreenImage) : '',
+			scale: Math.max(10, Math.min(100, Number(theme.fullscreenScale) || 100)),
+			fill: gradient({
+				mode,
+				start: theme.fullscreenBgStart || scoreboardColors.start,
+				mid: theme.fullscreenBgMid || scoreboardColors.mid,
+				end: theme.fullscreenBgEnd || scoreboardColors.end
+			})
+		};
 	});
 
 	// Top/bottom message banners (theme.bannerTop* / theme.bannerBottom*).
@@ -87,6 +116,7 @@
 			bg: theme?.[`banner${pos}Bg`] || '#0b0f16'
 		};
 	}
+	let tickerOn = $derived(!!(ticker?.active && ticker?.text));
 	let topBanner = $derived(banner('Top'));
 	let bottomBanner = $derived(banner('Bottom'));
 
@@ -130,6 +160,23 @@
 	     container, so the view's cqh/cqw units scale down to fit. -->
 	<div style="position:relative; flex:1 1 auto; min-height:0; width:100%; container-type:size;">
 		{@render children()}
+
+		{#if fullscreen}
+			<div
+				transition:fade={{ duration: 400 }}
+				style="position:absolute; inset:0; z-index:30; background:{fullscreen.fill}; display:flex; align-items:center; justify-content:center; padding-bottom:{tickerOn ? entry.targetHeight * 0.08 : 0}px;"
+			>
+				<!-- The ticker (8% of the display's height) overlaps this area, so the
+				     image stays above it while the background runs underneath. -->
+				{#if fullscreen.image}
+					<img
+						src={fullscreen.image}
+						alt=""
+						style="width:{fullscreen.scale}%; height:{fullscreen.scale}%; object-fit:contain;"
+					/>
+				{/if}
+			</div>
+		{/if}
 	</div>
 
 	{#if bottomBanner}<Banner {...bottomBanner} />{/if}
@@ -167,7 +214,7 @@
 	{/if}
 
 	<!-- Persistent news-style ticker along the bottom -->
-	{#if ticker?.active && ticker?.text}
+	{#if tickerOn}
 		<div
 			class="ticker-bar"
 			style="border-top:0.3cqh solid {theme?.homeColor ?? '#2563eb'}; bottom:{bottomBanner ? `calc(${bottomBanner.size}cqh * 1.6)` : '0'};"

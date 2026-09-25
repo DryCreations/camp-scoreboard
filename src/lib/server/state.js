@@ -239,9 +239,11 @@ export function deleteAsset(id) {
 	// Clear any theme reference to the now-deleted image so displays don't 404.
 	if (removedPath) {
 		const patch = {};
-		for (const key of ['homeLogo', 'awayLogo', 'centerLogo', 'backgroundImage']) {
+		for (const key of ['homeLogo', 'awayLogo', 'centerLogo', 'backgroundImage', 'fullscreenImage']) {
 			if (state.theme[key] === removedPath) patch[key] = '';
 		}
+		// Deleting the image that's on screen full-screen brings the scoreboard back.
+		if (patch.fullscreenImage === '') patch.fullscreenOn = false;
 		if (Object.keys(patch).length) {
 			state.theme = { ...state.theme, ...patch };
 			persist();

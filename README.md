@@ -132,10 +132,11 @@ The seeded display ids are `main` (scoreboard, 3840×2160), `clock` (1920×1080)
 The phone/iPad UI is split into two pages, with tabs at the top to switch between them:
 
 - **`/control`** — the live board remote you use during a game: **Score**, **Game Clock**,
-  **Shot Clock**, **Team Fouls**, **Overlay**, **Ticker**, **Banners**, **Triggers**,
+  **Shot Clock**, **Team Fouls**, **Overlay**, **Ticker**, **Banners**, **Full-screen image**, **Triggers**,
   **Soundboard**, and **OBS Control**.
 - **`/settings`** — set-once configuration: **Branding** (team names, colors, gradient,
-  logos), **Banners** (size and colors), **Sounds**, **Game Rules** (shot-clock duration, foul bonus threshold), and the
+  logos), **Banners** (size and colors), **Full-screen image** (upload, size, background),
+  **Sounds**, **Game Rules** (shot-clock duration, foul bonus threshold), and the
   **Displays** manager.
 
 Notes:
@@ -150,6 +151,13 @@ Notes:
   it stays up until **Hide**, and survives restarts. Text size and colors are on
   `/settings` → **Banners**. A banner takes real space: the scoreboard shrinks to fit between
   them, long text shrinks to one line, and the ticker sits just above the bottom banner.
+- **Full-screen image** puts a picture over the scoreboard (a school logo between games, a
+  halftime graphic). On `/control` → **Full-screen image**, tap a thumbnail and hit **Show**;
+  tapping another while it's up switches live, and **Hide** brings the scoreboard back. The
+  clocks and score keep running underneath. Banners, the ticker and overlays stay on top.
+  Upload images, set the image size, and choose the background behind it (radial, linear
+  or solid, matching the scoreboard by default) on `/settings` → **Full-screen image**.
+  Transparent PNGs show that background around the logo.
 - **Triggers** are momentary: buzzer, confetti, and shot-clock violation each play a
   flash/sound for a moment and clear themselves. The game clock and shot clock hitting zero
   fire the buzzer and shot-clock triggers automatically (both use the buzzer sound).

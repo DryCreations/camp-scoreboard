@@ -8,6 +8,7 @@
 	import SoundsSettings from '$lib/components/control/SoundsSettings.svelte';
 	import GameSettings from '$lib/components/control/GameSettings.svelte';
 	import BannerSettings from '$lib/components/control/BannerSettings.svelte';
+	import FullscreenSettings from '$lib/components/control/FullscreenSettings.svelte';
 	import DisplaysManager from '$lib/components/control/DisplaysManager.svelte';
 
 	// Visual + sound configuration, separated from the live control view so the
@@ -26,7 +27,7 @@
 
 	{#if store.state}
 		<div class="gap-4 md:columns-2 xl:columns-3">
-			{#each [AppearancePanel, AssetLibrary, ThemeEditor, BannerSettings, SoundsSettings, GameSettings, DisplaysManager] as Panel}
+			{#each [AppearancePanel, AssetLibrary, ThemeEditor, BannerSettings, FullscreenSettings, SoundsSettings, GameSettings, DisplaysManager] as Panel}
 				<div class="mb-4 break-inside-avoid"><Panel /></div>
 			{/each}
 		</div>

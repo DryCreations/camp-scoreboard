@@ -85,6 +85,7 @@
 		if (theme.awayLogo === path) roles.push('Away');
 		if (theme.centerLogo === path) roles.push('Center');
 		if (theme.backgroundImage === path) roles.push('BG');
+		if (theme.fullscreenImage === path) roles.push('Full screen');
 		return roles;
 	}
 
