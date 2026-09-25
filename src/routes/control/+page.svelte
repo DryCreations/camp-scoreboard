@@ -11,6 +11,7 @@
 	import TriggerPanel from '$lib/components/control/TriggerPanel.svelte';
 	import SoundboardPanel from '$lib/components/control/SoundboardPanel.svelte';
 	import TickerPanel from '$lib/components/control/TickerPanel.svelte';
+	import BannersPanel from '$lib/components/control/BannersPanel.svelte';
 	import TeamSwapPanel from '$lib/components/control/TeamSwapPanel.svelte';
 	import { onMount } from 'svelte';
 
@@ -55,7 +56,7 @@
 		<!-- Masonry: single column on phones, 2 on tablets, 3 on desktop. Cards keep
 		     their intrinsic height and pack tightly. -->
 		<div class="gap-4 md:columns-2 xl:columns-3">
-			{#each [ScorePanel, TimerPanel, ShotClockPanel, FoulsPanel, PossessionPanel, OverlayPanel, TriggerPanel, TickerPanel, SoundboardPanel, TeamSwapPanel] as Panel}
+			{#each [ScorePanel, TimerPanel, ShotClockPanel, FoulsPanel, PossessionPanel, OverlayPanel, TriggerPanel, TickerPanel, BannersPanel, SoundboardPanel, TeamSwapPanel] as Panel}
 				<div class="mb-4 break-inside-avoid"><Panel /></div>
 			{/each}
 		</div>

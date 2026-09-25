@@ -132,10 +132,10 @@ The seeded display ids are `main` (scoreboard, 3840×2160), `clock` (1920×1080)
 The phone/iPad UI is split into two pages, with tabs at the top to switch between them:
 
 - **`/control`** — the live board remote you use during a game: **Score**, **Game Clock**,
-  **Shot Clock**, **Team Fouls**, **Overlay**, **Ticker**, **Triggers**, **Soundboard**, and
-  **OBS Control**.
+  **Shot Clock**, **Team Fouls**, **Overlay**, **Ticker**, **Banners**, **Triggers**,
+  **Soundboard**, and **OBS Control**.
 - **`/settings`** — set-once configuration: **Branding** (team names, colors, gradient,
-  logos), **Sounds**, **Game Rules** (shot-clock duration, foul bonus threshold), and the
+  logos), **Banners** (size and colors), **Sounds**, **Game Rules** (shot-clock duration, foul bonus threshold), and the
   **Displays** manager.
 
 Notes:
@@ -145,6 +145,11 @@ Notes:
   display until you hit Hide. No timers or game logic attached — it's a simple on/off.
 - **Ticker** is a persistent news-broadcast crawl along the bottom of every display. Type a
   message, hit **Show**; **Hide** removes it.
+- **Banners** are fixed messages across the top and/or bottom of every display (a welcome
+  line, a sponsor, "Go Lions!"). Type the text on `/control` → **Banners** and hit **Show**;
+  it stays up until **Hide**, and survives restarts. Text size and colors are on
+  `/settings` → **Banners**. A banner takes real space: the scoreboard shrinks to fit between
+  them, long text shrinks to one line, and the ticker sits just above the bottom banner.
 - **Triggers** are momentary: buzzer, confetti, and shot-clock violation each play a
   flash/sound for a moment and clear themselves. The game clock and shot clock hitting zero
   fire the buzzer and shot-clock triggers automatically (both use the buzzer sound).

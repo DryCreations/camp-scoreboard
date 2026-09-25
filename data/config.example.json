@@ -20,7 +20,17 @@
 		"subtitle": "",
 		"centerLogo": "",
 		"glowIntensity": 40,
-		"showDividers": true
+		"showDividers": true,
+		"bannerTopOn": false,
+		"bannerTopText": "",
+		"bannerTopSize": 5,
+		"bannerTopColor": "#f4f6fb",
+		"bannerTopBg": "#0b0f16",
+		"bannerBottomOn": false,
+		"bannerBottomText": "",
+		"bannerBottomSize": 5,
+		"bannerBottomColor": "#f4f6fb",
+		"bannerBottomBg": "#0b0f16"
 	},
 	"activePreset": "broadcast",
 	"presets": [

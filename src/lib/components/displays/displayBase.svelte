@@ -7,6 +7,7 @@
 	// Sound is handled globally by <SoundPlayer> (real audio files), not here —
 	// this component only owns the visual animation layers, overlay, and ticker.
 	import { logoSrc } from '$lib/logo.js';
+	import Banner from './Banner.svelte';
 
 	let { entry, theme, trigger, overlay, ticker, overlayPlacement = 'top', children } = $props();
 
@@ -74,6 +75,21 @@
 			: `radial-gradient(${size} at ${center}, ${start} 0%, ${end} 100%)`;
 	});
 
+	// Top/bottom message banners (theme.bannerTop* / theme.bannerBottom*).
+	function banner(pos) {
+		const text = String(theme?.[`banner${pos}Text`] ?? '').trim();
+		if (!theme?.[`banner${pos}On`] || !text) return null;
+		const size = Math.max(2, Math.min(15, Number(theme?.[`banner${pos}Size`]) || 5));
+		return {
+			text,
+			size,
+			color: theme?.[`banner${pos}Color`] || '#f4f6fb',
+			bg: theme?.[`banner${pos}Bg`] || '#0b0f16'
+		};
+	}
+	let topBanner = $derived(banner('Top'));
+	let bottomBanner = $derived(banner('Bottom'));
+
 	let overlayWrapStyle = $derived.by(() => {
 		if (overlayPlacement === 'center') {
 			return 'top:50%; transform:translateY(-50%); background:linear-gradient(180deg, rgba(6,8,12,0.92) 0%, rgba(6,8,12,0.66) 100%); padding:1.9cqh 0; z-index:50;';
@@ -106,9 +122,17 @@
 
 <div
 	class="chrome-panel relative overflow-hidden text-white"
-	style="width:{entry.targetWidth}px; height:{entry.targetHeight}px; container-type:size; background:{backgroundFill}; --sb-glow:{glow};"
+	style="width:{entry.targetWidth}px; height:{entry.targetHeight}px; container-type:size; display:flex; flex-direction:column; background:{backgroundFill}; --sb-glow:{glow};"
 >
-	{@render children()}
+	{#if topBanner}<Banner {...topBanner} />{/if}
+
+	<!-- The view gets whatever space the banners leave. It's its own size
+	     container, so the view's cqh/cqw units scale down to fit. -->
+	<div style="position:relative; flex:1 1 auto; min-height:0; width:100%; container-type:size;">
+		{@render children()}
+	</div>
+
+	{#if bottomBanner}<Banner {...bottomBanner} />{/if}
 
 	<!-- Confetti burst -->
 	{#if showConfetti}
@@ -144,7 +168,10 @@
 
 	<!-- Persistent news-style ticker along the bottom -->
 	{#if ticker?.active && ticker?.text}
-		<div class="ticker-bar" style="border-top:0.3cqh solid {theme?.homeColor ?? '#2563eb'};">
+		<div
+			class="ticker-bar"
+			style="border-top:0.3cqh solid {theme?.homeColor ?? '#2563eb'}; bottom:{bottomBanner ? `calc(${bottomBanner.size}cqh * 1.6)` : '0'};"
+		>
 			<div class="ticker-track font-timer" style="font-size:5cqh;">
 				<span style="padding-right:8cqw;">{ticker.text}</span>
 				<span style="padding-right:8cqw;">{ticker.text}</span>
